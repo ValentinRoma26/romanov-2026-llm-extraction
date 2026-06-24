@@ -1,0 +1,33 @@
+# ---- Secrets ----
+.env
+*.key
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# ---- Optional: large data artifacts ----
+# Uncomment to keep heavy/raw data out of git and deposit it in an external
+# repository (Zenodo/OSF/figshare) instead. Leave commented to track datasets
+# in-repo.
+# data/raw/
+# data/interim/
+# results/raw_outputs/
