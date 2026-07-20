@@ -6,6 +6,19 @@ data-extraction pipeline and the results reported in the manuscript.
 
 > **Note:** The manuscript itself is **not** included in this repository.
 
+---
+
+## 👉 New here? Start with the tutorial
+
+If you were sent here to **try the data-extraction workflow and give feedback**,
+go straight to **[`tutorial/`](tutorial/README.md)**. It's a self-contained,
+no-code, ~1-hour walkthrough: benchmark your favourite LLM on one paper, then
+learn to make an LLM design a better extraction prompt. Everything you need
+(prompts, the paper, the benchmark, and a self-scoring spreadsheet) is in that
+folder.
+
+---
+
 ## Repository structure
 
 ```
