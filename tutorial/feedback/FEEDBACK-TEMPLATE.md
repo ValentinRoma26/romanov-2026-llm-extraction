@@ -4,7 +4,6 @@ Rough answers are welcome.
 
 ## Setup
 
-- **Path:** quick / full
 - **LLM name and version:**
 - **Date run:**
 - **Could the model browse the web?**
@@ -15,18 +14,15 @@ Rough answers are welcome.
 
 ## Lab 1 — expert prompt
 
-- **Run 1 accuracy:**
-- **Average accuracy (full path):**
-- **Consistency (full path):**
+- **Accuracy:**
 - **Extra rows returned:**
 - **Did you need the normalizer?**
 
 ## Lab 2 — master prompt
 
-- **Run 1 accuracy:**
-- **Average accuracy (full path):**
-- **Consistency (full path):**
+- **Accuracy:**
 - **Which prompt performed better?**
+- **Did you choose to repeat either prompt?**
 
 ## Clarity and usability
 
