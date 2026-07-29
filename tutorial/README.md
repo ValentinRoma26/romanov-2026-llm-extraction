@@ -1,149 +1,234 @@
 # Tutorial: benchmark an LLM on scientific data extraction
 
-Welcome! This tutorial teaches you to do — and check — the core task from our
-project: **using a large language model (LLM) to pull structured data out of a
-scientific paper, and measuring how accurate it is.**
+This no-code tutorial shows how to use a large language model (LLM) to extract
+structured data from one scientific paper and check the answer against a known
+benchmark.
 
-You will work with **one paper** (called **ref13**) the whole way through. By the
-end you will have:
+You will:
 
-1. Seen what a "gold-standard" extraction prompt looks like.
-2. Run it yourself and measured your model against our benchmark (**Lab 1**).
-3. Learned to make an LLM *design a better prompt for you*, and checked whether
-   that beats the gold standard (**Lab 2**).
+1. run the research project's original extraction prompt (**Lab 1**);
+2. score the answer in a spreadsheet; and
+3. use the project's original meta-prompts to generate and test a master prompt
+   (**Lab 2**).
 
-You do **not** need to write any code. You need a chat LLM (ChatGPT, Claude,
-Gemini, whatever you like) and a spreadsheet program (Excel, Google Sheets, or
-LibreOffice).
+No prompt-writing or biology experience is required.
 
-Set aside about **45–60 minutes**.
+> **Research integrity:** the four files in `prompts/` are research materials
+> used in the associated article. Use them verbatim. Do not shorten, correct,
+> modernise, or otherwise edit them. The guidance below explains how to use and
+> score their output without changing the prompts themselves.
 
----
+## Choose a path
 
-## What's in this folder
+- **Quick path — about 20–30 minutes:** do one extraction run in each lab. This
+  is best for learning the workflow.
+- **Full comparison — about 90–120 minutes:** do five independent extraction
+  runs in each lab. This lets you measure accuracy and consistency.
 
-| Folder / file | What it is |
+The full comparison uses at least 14 model calls: five in Lab 1, three
+prompt-design attempts, one aggregation call, and five in Lab 2.
+
+## What you need
+
+- a chat LLM that accepts PDF attachments;
+- Excel or LibreOffice; and
+- the files in this `tutorial` folder.
+
+The workbook is designed for on-screen use. Google Sheets may import it, but is
+not part of this tutorial's compatibility check.
+
+> **Privacy note:** uploading a PDF sends it to the LLM provider. Use only
+> documents you are allowed to share and check the provider's data settings.
+
+## Four terms used here
+
+- **LLM:** the chat model you are testing.
+- **Prompt:** the instructions you give the model.
+- **Meta-prompt:** a prompt that asks the model to write another prompt.
+- **Fresh chat:** a new conversation with no earlier messages. Fresh chats keep
+  one run from influencing the next.
+
+## Files
+
+| File | Purpose |
 |---|---|
-| `prompts/1-gold-standard-prompt.md` | The expert, hand-written extraction prompt. |
-| `prompts/2-normalizer-prompt.md` | A tidy-up prompt for when a model's answer is messy. |
-| `prompts/3-initial-meta-prompt.md` | Lab 2: a prompt that asks an LLM to *design a prompt*. |
-| `prompts/4-aggregate-meta-prompt.md` | Lab 2: merges 3 designed prompts into one master prompt. |
-| `paper/ref13.pdf` | The paper you extract from. (`paper/README.md` says what it is.) |
-| `benchmark/ref13-ground-truth.xlsx` | The correct answer: 6 rows. |
-| `scoring/ref13-scoring-template.xlsx` | Where you paste your results and get a score. |
-| `feedback/FEEDBACK-TEMPLATE.md` | Please fill this in and send it back. |
+| `paper/ref13.pdf` | The paper used in both labs. |
+| `paper/README.md` | Citation and DOI for the paper. |
+| `prompts/1-gold-standard-prompt.md` | Original research extraction prompt for Lab 1. |
+| `prompts/2-normalizer-prompt.md` | Original formatting prompt for messy output. |
+| `prompts/3-initial-meta-prompt.md` | Original prompt-design meta-prompt for Lab 2. |
+| `prompts/4-aggregate-meta-prompt.md` | Original aggregation meta-prompt for Lab 2. |
+| `benchmark/ref13-ground-truth.xlsx` | The six scored benchmark rows. |
+| `scoring/ref13-scoring-template.xlsx` | Workbook that scores five runs. |
+| `feedback/FEEDBACK-TEMPLATE.md` | Short feedback form. |
 
-> **Copying a prompt file:** open it on GitHub, click the **Raw** button, then
-> select-all and copy. That gives you the clean text with no formatting junk.
+On GitHub, open a prompt file and click **Raw** before copying it. This avoids
+copying page controls or formatting.
 
----
+## Understand the scored fields
 
-## The task in plain words
+The research prompt asks for additional reference, nuance, and quotation
+columns. The tutorial workbook scores only these first seven data fields:
 
-The paper reports how strongly **calcium (Ca²⁺)** sticks to a muscle protein
-called **troponin**, under different conditions. Each distinct measurement
-becomes one row, with these columns:
+| Prompt/workbook label | What it means in this research schema |
+|---|---|
+| Species | Animal source. |
+| Temp (°C) | Experimental temperature. |
+| Troponin complex | Protein or protein complex tested. |
+| Bound Ca2+ measure | How calcium binding was measured. |
+| Mg (mM) | Magnesium condition. |
+| Kd (M^-1) | Association constant in M⁻¹. |
+| K (µM) | Reciprocal dissociation constant in µM. |
 
-`Species · Temp (°C) · Troponin complex · Bound Ca2+ measure · Mg (mM) · Kd (M^-1) · K (µM)`
+### Important notation note
 
-You don't need to understand the biology. Your job is to check whether the LLM
-copies the numbers and conditions out of the paper correctly.
+The research schema uses `Kd (M^-1)` for the association constant and `K (µM)`
+for the dissociation constant. These labels are preserved because the prompts
+are study materials used in the article.
 
----
+In conventional biochemical notation, an association constant in M⁻¹ is
+usually called `Ka`, while a dissociation constant in µM is usually called
+`Kd`. Do not rename the columns when running or scoring this tutorial.
 
-## Lab 1 — Validate the gold standard
+The two values are reciprocals:
 
-**Goal:** run the expert prompt on ref13 and see how close your model gets to our
-benchmark. You will do this **5 times** so you can also see how *consistent* the
-model is.
+`K (µM) = 1,000,000 ÷ Kd (M⁻¹)`
 
-### Step 1 — Open the scoring sheet
-Open `scoring/ref13-scoring-template.xlsx` and read the **① Start Here** tab. It
-explains the colours: **grey = the benchmark (don't touch)**, **blue = paste your
-answer here**, **green = automatic check**, **yellow = optional, your judgement.**
+For example, the research schema records `2.5 × 10^5 M⁻¹` and its reciprocal
+`4 µM`.
 
-### Step 2 — Get an answer from your model (Run 1)
-1. Open a **new chat** in your LLM.
-2. Copy **all** of `prompts/1-gold-standard-prompt.md` and paste it in.
-3. Attach or upload `paper/ref13.pdf` in the same message. (If your tool can't
-   take a PDF, paste the paper's text.)
-4. Send it. The model returns a table of rows.
+## Where the six benchmark rows come from
 
-### Step 3 — (only if the answer is messy) Normalise it
-If the answer is a clean table, skip this. If it came back as paragraphs, bullet
-points, or a weird layout, open `prompts/2-normalizer-prompt.md`, paste it into
-the **same chat**, paste the messy answer under it, and send. You'll get a clean
-table back. (Some models just won't follow the format first time — this is normal
-and is exactly why this step exists.)
+The benchmark uses the low-affinity **K2** measurements in **Table I on PDF
+page 3** (journal page 11690) for:
 
-### Step 4 — Score it
-Go to the **Run 1** tab of the scoring sheet. For each of the 6 grey benchmark
-rows, find the matching row in your model's answer (same species, complex,
-method, Mg) and paste its 7 values into the blue columns on that line.
+- TnC;
+- TnI·TnC; and
+- Reconstituted Tn.
 
-- The green columns light up **1** (match) or **0** (miss) automatically, and the
-  **Auto /7** column adds them up.
-- The auto-check is deliberately strict about text. If it says 0 but the two
-  values clearly mean the same thing (e.g. `4` vs `4 °C`), type the corrected row
-  score into the yellow **Your /7** column. Otherwise leave yellow blank.
+Each complex has two benchmark rows: the paper's no-added-Mg condition and
+4 mM Mg. The paper and model may contain additional measurements, but those are
+not part of this six-row tutorial benchmark.
 
-> **Your model will probably output more than 6 rows.** Papers like this also
-> report *high-affinity* calcium/magnesium sites, which are **not** part of the 6
-> benchmark rows. Only score the 6 that match. If you're curious, note how many
-> extra rows appeared in the yellow box under the run — over-reporting is itself
-> an interesting result.
+## Before you start
 
-### Step 5 — Repeat for Runs 2–5
-Do Steps 2–4 four more times, each in a **fresh chat**, filling the **Run 2 …
-Run 5** tabs. Same prompt, same paper — you're testing whether the model gives
-the same answer every time.
+1. Open `scoring/ref13-scoring-template.xlsx`.
+2. Read the **① Start Here** tab.
+3. Record the model name, version, date, and whether it can browse the web.
+4. If the model exposes a temperature or randomness setting, keep it unchanged
+   for every run and record it.
 
-### Step 6 — Read your result
-Open the **Scoreboard** tab. You now have:
-- **Accuracy** for each run and your **average** — how correct the model is.
-- **Consistency %** — how often all 5 runs agreed. A model can be accurate but
-  inconsistent, or consistent but wrong. Both matter.
+The workbook colours mean:
 
-**That's Lab 1.** You've reproduced our task and benchmarked your model.
+- **grey:** benchmark; do not edit;
+- **blue:** paste the model's seven scored values;
+- **green:** automatic field-by-field check; and
+- **yellow:** optional manual row score if the automatic check misses an
+  equivalent value.
 
----
+## Lab 1 — Test the original extraction prompt
 
-## Lab 2 — Make the LLM design a better prompt
+### 1. Get Run 1
 
-**Goal:** instead of using our expert prompt, get an LLM to *write its own*
-extraction prompt — then combine several attempts into one "master" prompt and
-check whether it beats the gold standard from Lab 1.
+1. Open a fresh chat.
+2. Copy all of `prompts/1-gold-standard-prompt.md` without changing it.
+3. Paste the prompt and attach `paper/ref13.pdf` in the same message.
+4. Send the message.
 
-### Step 1 — Generate 3 prompts
-Open `prompts/3-initial-meta-prompt.md`. This asks the model to *design an
-extraction prompt*. Run it **three separate times in three fresh chats**. Save
-each prompt the model gives you: call them **Attempt 1, 2, 3**.
+The prompt may produce more than six rows and includes fields that the workbook
+does not score. That is expected.
 
-### Step 2 — Merge them into a master prompt
-Open `prompts/4-aggregate-meta-prompt.md`, paste your three attempts where it
-asks, and run it once. The model returns **one master prompt**.
+### 2. Tidy the layout only if needed
 
-### Step 3 — Benchmark the master prompt
-Now repeat **Lab 1** exactly — but use your **master prompt** instead of the
-gold-standard prompt. Make a copy of the scoring sheet (rename it
-`ref13-scoring-MASTER.xlsx`) and fill it in the same way, 5 runs.
+Skip this step if the answer is already a usable table.
 
-### Step 4 — Compare
-Put the two numbers side by side:
+If the answer is prose, bullets, or several tables, paste the unchanged
+`prompts/2-normalizer-prompt.md` into the same chat, followed by the model's
+answer. The normalizer changes layout, not correctness.
 
-| | Gold-standard prompt (Lab 1) | Your master prompt (Lab 2) |
-|---|---|---|
+### 3. Score the run
+
+1. Open the **Run 1** tab.
+2. Find the six rows that correspond to the benchmark's K2 measurements.
+3. Match each model row to the grey row with the same complex and Mg condition.
+4. Paste only the seven scored fields into the blue cells. Do not paste `Ref.`,
+   `Nuance`, calculation, or quote columns into the scorer.
+5. Read the green checks and the **Auto /7** row score.
+6. Use the yellow **Your /7** cell only when a value clearly means the same
+   thing but the automatic check gives 0. Enter a whole number from 0 to 7.
+
+The checker accepts common presentation differences, including attached units,
+`×` versus `x`, `2.5e5`, Unicode superscripts, `TnC-TnI` versus `TnI·TnC`, and
+`Tn` versus `Reconstituted Tn`.
+
+If the model returns additional high-affinity or otherwise out-of-scope rows,
+do not score them. Record their number in the yellow box if useful.
+
+### 4. Finish the chosen path
+
+- **Quick path:** continue to Lab 2 after Run 1.
+- **Full comparison:** repeat the extraction in four fresh chats and fill
+  **Run 2** through **Run 5**.
+
+The **Scoreboard** shows `Incomplete` until all 42 blue cells for a run are
+filled. A completed run can legitimately score 0/42. Consistency appears only
+after all five runs are complete.
+
+## Lab 2 — Use the original meta-prompts
+
+Lab 2 uses the two research meta-prompts exactly as provided.
+
+### 1. Generate three candidate prompts
+
+Run the unchanged `prompts/3-initial-meta-prompt.md` in three fresh chats. Save
+the results as Attempt 1, Attempt 2, and Attempt 3.
+
+This meta-prompt asks the model to look online. If the model cannot browse, do
+not rewrite the prompt; record that limitation with your results.
+
+For the quick path, one candidate is enough. Use it directly as the master
+prompt and skip aggregation.
+
+### 2. Create one master prompt
+
+Open a fresh chat. Paste the unchanged
+`prompts/4-aggregate-meta-prompt.md`, then replace only its three attempt
+placeholders with the generated prompts.
+
+### 3. Test the master prompt
+
+1. Make a copy of the scoring workbook called
+   `ref13-scoring-MASTER.xlsx`.
+2. Open a fresh chat.
+3. Paste the master prompt and attach the same `paper/ref13.pdf`.
+4. From the answer, paste only the same seven scored data fields into the
+   workbook.
+5. For the full comparison, repeat this in five fresh chats.
+
+### 4. Compare
+
+| Result | Original extraction prompt | Master prompt |
+|---|---:|---:|
 | Average accuracy | ___ % | ___ % |
-| Consistency | ___ % | ___ % |
+| Consistency (five-run path only) | ___ % | ___ % |
 
-Did the LLM-designed master prompt match, beat, or fall short of the expert
-prompt? There's no "right" answer — **the comparison is the point.** It shows you
-how far good prompt-engineering can get, and where human expertise still wins.
+One paper cannot establish that a prompt is generally better. Treat the result
+as a small comparison within the research design.
 
----
+## Troubleshooting
 
-## When you're done
+- **The model cannot read PDFs:** use another PDF-capable chat model. Copying
+  all text from this two-column paper is error-prone.
+- **The answer has more than six rows:** score only the benchmark's six K2 rows.
+- **The answer has many quote columns:** keep them in the model output, but
+  paste only the seven scored fields into the workbook.
+- **A formula shows an error:** confirm you have the current workbook and reopen
+  it in Excel or LibreOffice so formulas recalculate.
+- **A correct-looking value scores 0:** use the yellow manual score and record
+  the mismatch in the feedback form. A retained `±` uncertainty may require a
+  manual override.
 
-Please fill in `feedback/FEEDBACK-TEMPLATE.md` and send it back — your numbers,
-how long it took, and anything that confused you. That feedback is the whole
-reason for this tutorial. Thank you!
+## When you finish
+
+Fill in `feedback/FEEDBACK-TEMPLATE.md`. Include the model version, browsing
+ability, chosen path, time taken, scores, and the first unclear step.

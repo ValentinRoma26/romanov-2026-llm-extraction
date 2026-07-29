@@ -9,13 +9,10 @@ is exactly the kind of data the extraction task is about.
 
 ## The PDF
 
-The file `ref13.pdf` should sit in this folder. It is an open-access / freely
-available article.
+The included `ref13.pdf` is an open-access article.
 
-<!-- MAINTAINER TODO: drop ref13.pdf into this folder and fill in the citation
-     and DOI below before sharing the repo with a tester. -->
-
-- **Citation:** _<add full citation here>_
-- **DOI / link:** _<add DOI or URL here>_
-
-If `ref13.pdf` is missing, ask the person who shared this tutorial with you for it.
+- **Citation:** Holroyde, M. J., Robertson, S. P., Johnson, J. D., Solaro, R. J.,
+  & Potter, J. D. (1980). The calcium and magnesium binding sites on cardiac
+  troponin and their role in the regulation of myofibrillar adenosine
+  triphosphatase. *Journal of Biological Chemistry, 255*(24), 11688-11693.
+- **DOI:** [10.1016/S0021-9258(19)70187-2](https://doi.org/10.1016/S0021-9258(19)70187-2)
