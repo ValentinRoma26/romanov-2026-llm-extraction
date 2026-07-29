@@ -7,6 +7,8 @@ Rough answers are welcome.
 - **Path:** quick / full
 - **LLM name and version:**
 - **Date run:**
+- **Could the model browse the web?**
+- **Were all four research prompts used verbatim?**
 - **Temperature/randomness setting, if visible:**
 - **Spreadsheet:** Excel / LibreOffice / other
 - **Total time:**

@@ -1,40 +1,36 @@
-# Aggregate meta-prompt (Lab 2, step 2)
+# Aggregate meta-prompt (Lab 2, step 3)
 
-Replace the three placeholders with the candidate prompts from step 1. Run this
-once in a fresh chat.
+**What this is:** This takes your **three** designed prompts from step 1 and asks
+the LLM to merge them into one stronger "master prompt".
+
+**How to use it:** Open a fresh chat. Paste this whole prompt. Then paste your
+three attempts where it says `<PASTE ATTEMPT 1 / 2 / 3 HERE>`. The model returns
+one master prompt — that is the prompt you will benchmark in Lab 2, exactly the
+way you benchmarked the gold-standard prompt in Lab 1.
 
 ---
 
-Combine the three candidate prompts below into one clear master extraction
-prompt for a beginner.
+I have generated three different versions of a system prompt designed to extract specific biochemical data (Troponin-Ca²⁺ binding) from scientific texts. Your goal is to synthesize these three distinct attempts into one "Master Prompt" that is superior to any single individual attempt.
+The final prompt should be rich and full of information, combining the best of all 3 attempts. Do not assume or imply.
+Start with attempt 1, and add components from attempt 2 and attempt 3. The final prompt will be larger than any one attempt, will have broader coverage, will maintain the necessary nuance to carry out the task.
+I will provide you with the initial prompt used to generate the 3 prompts provided here.
 
-Keep the most precise instruction when candidates disagree. Remove repetition,
-examples that are unrelated to ref13, web-browsing instructions, and extra
-fields. The master prompt should be concise; it does not need to be longer than
-the candidates.
+The initial prompt that produced the three attempts was:
 
-The master prompt must preserve this fixed contract:
+> Extract Species, Temp, Troponin Complex, Bound Ca2+ Measure, Mg, Kd (M^-1),
+> K (μM), Ref., and Nuance from a PDF, into one Markdown table, with a quote
+> column next to each field so every value is verifiable. Do not assume or imply.
+> Flag any calculated values.
 
-- exactly six K2 rows from ref13 Table I;
-- TnC, TnI·TnC, and Reconstituted Tn;
-- no-added-Mg and 4 mM Mg conditions;
-- exactly these seven columns:
-  `Species | Temp (°C) | Troponin complex | Measurement | Mg (mM) | Ka (M^-1) | Kd (µM)`;
-- `Ka` is the association constant in M⁻¹;
-- `Kd` is the dissociation constant in µM;
-- `Kd (µM) = 1,000,000 / Ka (M^-1)`; and
-- no guessing.
+Here are the three attempts to merge:
 
-Return only the finished master prompt. Do not ask questions.
-
-## Attempt 1
-
+--- ATTEMPT 1 ---
 <PASTE ATTEMPT 1 HERE>
 
-## Attempt 2
-
+--- ATTEMPT 2 ---
 <PASTE ATTEMPT 2 HERE>
 
-## Attempt 3
-
+--- ATTEMPT 3 ---
 <PASTE ATTEMPT 3 HERE>
+
+Provide the full master prompt first. If you have any questions, ask them at the end, second.
