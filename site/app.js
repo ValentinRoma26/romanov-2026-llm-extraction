@@ -52,6 +52,8 @@ let prompts = {};
 let benchmark = null;
 let currentPreview = "";
 let toastTimer = null;
+let navDirection = "forward";
+let completedSteps = new Set();
 
 const stageRoot = document.querySelector("#stage");
 const progressList = document.querySelector("#progress-list");
@@ -109,17 +111,12 @@ async function init() {
 function bindGlobalEvents() {
   backButton.addEventListener("click", () => {
     if (state.stage === 0) return;
-    state.stage -= 1;
-    persist();
-    render();
+    goToStage(state.stage - 1);
   });
 
   nextButton.addEventListener("click", () => {
     if (!canContinue(state.stage) || state.stage >= STAGES.length - 1) return;
-    state.stage += 1;
-    state.maxStage = Math.max(state.maxStage, state.stage);
-    persist();
-    render();
+    goToStage(state.stage + 1);
   });
 
   closeDialog.addEventListener("click", () => previewDialog.close());
@@ -127,8 +124,18 @@ function bindGlobalEvents() {
     if (event.target === previewDialog) previewDialog.close();
   });
   dialogCopy.addEventListener("click", async () => {
-    await copyText(currentPreview, "Prompt copied");
+    await copyText(currentPreview, "Prompt copied", dialogCopy);
   });
+}
+
+function goToStage(index) {
+  const target = Math.max(0, Math.min(STAGES.length - 1, index));
+  if (target === state.stage) return;
+  navDirection = target > state.stage ? "forward" : "back";
+  state.stage = target;
+  state.maxStage = Math.max(state.maxStage, target);
+  persist();
+  render();
 }
 
 function render() {
@@ -144,50 +151,79 @@ function render() {
     renderFinish,
   ];
 
+  stageRoot.dataset.direction = navDirection;
   stageRoot.innerHTML = renderers[state.stage]();
   bindStageEvents();
   updateFooter();
   document.title = `${STAGES[state.stage].label} · LLM Extraction Tutorial`;
 }
 
+/**
+ * The rail is built once and then updated in place, so the connector fill and
+ * the completion tick animate between states instead of remounting.
+ */
 function renderProgress() {
-  progressList.innerHTML = STAGES.map((stage, index) => {
-    const isCurrent = index === state.stage;
-    const isComplete = index < state.maxStage;
-    const statusClass = isCurrent
-      ? "is-current"
-      : isComplete
-        ? "is-complete"
-        : "";
-    const number = isComplete ? "✓" : index + 1;
-    const disabled = index > state.maxStage;
-    return `
-      <li class="progress-step ${statusClass}">
-        <button
-          class="progress-button"
-          type="button"
-          data-stage-index="${index}"
-          ${disabled ? "disabled" : ""}
-          ${isCurrent ? 'aria-current="step"' : ""}
-          aria-label="${escapeHTML(stage.label)}${isComplete ? ", completed" : ""}"
-        >
-          <span class="progress-number">${number}</span>
+  if (!progressList.children.length) {
+    buildProgress();
+  }
+  updateProgress();
+}
+
+function buildProgress() {
+  progressList.innerHTML = STAGES.map(
+    (stage, index) => `
+      <li class="progress-step">
+        <button class="progress-button" type="button" data-stage-index="${index}">
+          <span class="progress-number">${index + 1}</span>
           <span class="progress-label">${escapeHTML(stage.label)}</span>
         </button>
       </li>
-    `;
-  }).join("");
+    `,
+  ).join("");
 
   progressList.querySelectorAll("[data-stage-index]").forEach((button) => {
     button.addEventListener("click", () => {
       const index = Number(button.dataset.stageIndex);
-      if (index <= state.maxStage) {
-        state.stage = index;
-        persist();
-        render();
-      }
+      if (index <= state.maxStage) goToStage(index);
     });
   });
+}
+
+function updateProgress() {
+  const nextCompleted = new Set();
+
+  progressList.querySelectorAll(".progress-step").forEach((step, index) => {
+    const isCurrent = index === state.stage;
+    const isComplete = index < state.maxStage;
+    const button = step.querySelector(".progress-button");
+    const number = step.querySelector(".progress-number");
+
+    if (isComplete) nextCompleted.add(index);
+
+    step.classList.toggle("is-current", isCurrent);
+    step.classList.toggle("is-complete", isComplete);
+
+    // Pop the tick only on the render where the step first turns complete.
+    if (isComplete && !completedSteps.has(index)) {
+      step.classList.remove("just-completed");
+      void step.offsetWidth;
+      step.classList.add("just-completed");
+    }
+
+    number.textContent = isComplete ? "✓" : String(index + 1);
+    button.disabled = index > state.maxStage;
+    button.setAttribute(
+      "aria-label",
+      `${STAGES[index].label}${isComplete ? ", completed" : ""}`,
+    );
+    if (isCurrent) {
+      button.setAttribute("aria-current", "step");
+    } else {
+      button.removeAttribute("aria-current");
+    }
+  });
+
+  completedSteps = nextCompleted;
 }
 
 function stageHeading(kicker, title, description) {
@@ -516,11 +552,9 @@ function renderCreate() {
           <section class="attempt-editor">
             <div class="attempt-editor-header">
               <div>
-                <h3>Attempt ${attemptNumber}</h3>
-                <p>
-                  With browsing or search turned on, open fresh chat
-                  ${attemptNumber}, run the prompt, and paste back only the
-                  prompt your LLM returns.
+                <h3 data-attempt-title>Attempt ${attemptNumber}</h3>
+                <p data-attempt-copy>
+                  ${escapeHTML(attemptInstruction(attemptNumber))}
                 </p>
               </div>
               <span class="tag">${escapeHTML(state.model)}</span>
@@ -558,6 +592,10 @@ function renderCreate() {
       </div>
     </section>
   `;
+}
+
+function attemptInstruction(attemptNumber) {
+  return `With browsing or search turned on, open fresh chat ${attemptNumber}, run the prompt, and paste back only the prompt your LLM returns.`;
 }
 
 function renderCombine() {
@@ -805,7 +843,7 @@ function bindStageEvents() {
   document.querySelectorAll("[data-copy-prompt]").forEach((button) => {
     button.addEventListener("click", async () => {
       const key = button.dataset.copyPrompt;
-      await copyText(prompts[key], `${PROMPT_FILES[key].title} copied`);
+      await copyText(prompts[key], `${PROMPT_FILES[key].title} copied`, button);
     });
   });
 
@@ -845,9 +883,7 @@ function bindStageEvents() {
 
   document.querySelectorAll("[data-attempt-tab]").forEach((button) => {
     button.addEventListener("click", () => {
-      state.activeAttempt = Number(button.dataset.attemptTab);
-      persist();
-      render();
+      setActiveAttempt(Number(button.dataset.attemptTab));
     });
   });
 
@@ -862,8 +898,8 @@ function bindStageEvents() {
     });
   }
 
-  document.querySelector("#copy-initial")?.addEventListener("click", async () => {
-    await copyText(filledInitialPrompt(), "Meta-prompt copied");
+  document.querySelector("#copy-initial")?.addEventListener("click", async (event) => {
+    await copyText(filledInitialPrompt(), "Meta-prompt copied", event.currentTarget);
   });
 
   document.querySelector("#preview-initial")?.addEventListener("click", () => {
@@ -874,8 +910,12 @@ function bindStageEvents() {
     );
   });
 
-  document.querySelector("#copy-aggregate")?.addEventListener("click", async () => {
-    await copyText(completedAggregatePrompt(), "Completed aggregate prompt copied");
+  document.querySelector("#copy-aggregate")?.addEventListener("click", async (event) => {
+    await copyText(
+      completedAggregatePrompt(),
+      "Completed aggregate prompt copied",
+      event.currentTarget,
+    );
   });
 
   document.querySelector("#preview-aggregate")?.addEventListener("click", () => {
@@ -903,8 +943,8 @@ function bindStageEvents() {
     });
   }
 
-  document.querySelector("#copy-master")?.addEventListener("click", async () => {
-    await copyText(state.master, "Master prompt copied");
+  document.querySelector("#copy-master")?.addEventListener("click", async (event) => {
+    await copyText(state.master, "Master prompt copied", event.currentTarget);
   });
 
   document.querySelector("#preview-master")?.addEventListener("click", () => {
@@ -947,6 +987,43 @@ function bindStageEvents() {
     render();
     showToast("Tutorial reset");
   });
+}
+
+/**
+ * Switching attempts swaps the editor contents in place and cross-fades them,
+ * which keeps the surrounding stage still instead of replaying its entrance.
+ */
+function setActiveAttempt(index) {
+  if (index === state.activeAttempt) return;
+  state.activeAttempt = index;
+  persist();
+
+  const attemptNumber = index + 1;
+  const editor = document.querySelector(".attempt-editor");
+  const textarea = document.querySelector("#attempt-output");
+  const title = document.querySelector("[data-attempt-title]");
+  const copy = document.querySelector("[data-attempt-copy]");
+
+  if (title) title.textContent = `Attempt ${attemptNumber}`;
+  if (copy) copy.textContent = attemptInstruction(attemptNumber);
+  if (textarea) {
+    textarea.value = state.attempts[index];
+    textarea.placeholder = `Paste candidate prompt ${attemptNumber} here…`;
+  }
+
+  document.querySelectorAll("[data-attempt-tab]").forEach((button, tabIndex) => {
+    const isCurrent = tabIndex === index;
+    button.classList.toggle("is-current", isCurrent);
+    button.setAttribute("aria-selected", String(isCurrent));
+  });
+
+  if (editor) {
+    editor.classList.remove("is-swapping");
+    void editor.offsetWidth;
+    editor.classList.add("is-swapping");
+  }
+
+  updateFooter();
 }
 
 function updateAttemptStatus() {
@@ -1055,7 +1132,7 @@ function openPreview(
   dialogContent.scrollTop = 0;
 }
 
-async function copyText(text, successMessage) {
+async function copyText(text, successMessage, trigger) {
   try {
     await navigator.clipboard.writeText(text);
   } catch {
@@ -1069,7 +1146,14 @@ async function copyText(text, successMessage) {
     document.execCommand("copy");
     helper.remove();
   }
+  flashCopied(trigger);
   showToast(successMessage);
+}
+
+function flashCopied(trigger) {
+  if (!trigger) return;
+  trigger.classList.add("is-copied");
+  window.setTimeout(() => trigger.classList.remove("is-copied"), 1400);
 }
 
 function showToast(message) {
