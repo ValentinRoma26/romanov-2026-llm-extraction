@@ -1,15 +1,3 @@
-# Aggregate meta-prompt (Lab 2, step 3)
-
-**What this is:** This takes your **three** designed prompts from step 1 and asks
-the LLM to merge them into one stronger "master prompt".
-
-**How to use it:** Open a fresh chat. Paste this whole prompt. Then paste your
-three attempts where it says `<PASTE ATTEMPT 1 / 2 / 3 HERE>`. The model returns
-one master prompt — that is the prompt you will benchmark in Lab 2, exactly the
-way you benchmarked the gold-standard prompt in Lab 1.
-
----
-
 I have generated three different versions of a system prompt designed to extract specific biochemical data (Troponin-Ca²⁺ binding) from scientific texts. Your goal is to synthesize these three distinct attempts into one "Master Prompt" that is superior to any single individual attempt.
 The final prompt should be rich and full of information, combining the best of all 3 attempts. Do not assume or imply.
 Start with attempt 1, and add components from attempt 2 and attempt 3. The final prompt will be larger than any one attempt, will have broader coverage, will maintain the necessary nuance to carry out the task.

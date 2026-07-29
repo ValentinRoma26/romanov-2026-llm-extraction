@@ -29,8 +29,6 @@ const PROMPT_FILES = {
 
 const ASSETS = {
   paper: "./assets/ref13.pdf",
-  scorer: "./assets/ref13-scoring-template.xlsx",
-  benchmark: "./assets/ref13-ground-truth.xlsx",
 };
 
 const STORAGE_KEY = "romanov-tutorial-progress-v1";
@@ -198,7 +196,7 @@ function stageHeading(kicker, title, description) {
       <div>
         <span class="eyebrow">${escapeHTML(kicker)}</span>
         <h1>${escapeHTML(title)}</h1>
-        <p>${escapeHTML(description)}</p>
+        ${description ? `<p>${escapeHTML(description)}</p>` : ""}
       </div>
       <span class="stage-count">Step ${state.stage + 1} of ${STAGES.length}</span>
     </div>
@@ -296,7 +294,7 @@ function renderOriginal() {
       ${stageHeading(
         "Lab 1 · Baseline extraction",
         "Run the original prompt",
-        "Open a fresh chat, attach ref13.pdf, paste the prompt, and send the message.",
+        "",
       )}
       <div class="stage-body">
         <div class="action-grid">
@@ -404,7 +402,7 @@ function renderCheck() {
         "Reveal the six benchmark rows only after your LLM has finished.",
       )}
       <div class="stage-body">
-        <div class="reference-layout">
+        <div class="reference-layout ${state.revealOriginal ? "is-revealed" : ""}">
           <div class="reference-toolbar">
             <div>
               <h2>Reference values</h2>
@@ -427,9 +425,6 @@ function renderCheck() {
                 />
                 <span class="score-suffix">/ 42</span>
               </label>
-              <a class="button button-secondary button-compact" href="${ASSETS.scorer}" download>
-                Exact scorer
-              </a>
             </div>
           </div>
           <div class="reference-surface">
@@ -456,6 +451,20 @@ function renderCheck() {
                 `
             }
           </div>
+          ${
+            state.revealOriginal
+              ? `
+                <div class="lab-transition" data-testid="lab2-transition">
+                  <span class="transition-badge">Lab 1 complete</span>
+                  <span class="transition-copy">
+                    <strong>Next, you will design a master prompt in Lab 2.</strong>
+                    <small>Before continuing, turn on web browsing or search in your LLM.</small>
+                  </span>
+                  <span class="transition-next" aria-hidden="true">Lab 2 →</span>
+                </div>
+              `
+              : ""
+          }
         </div>
       </div>
     </section>
@@ -470,7 +479,7 @@ function renderCreate() {
       ${stageHeading(
         "Lab 2 · Prompt design",
         "Create three candidate prompts",
-        "Run the same meta-prompt in three fresh chats, then paste each returned prompt here.",
+        "Turn on web browsing or search in your LLM, then run the same meta-prompt in three fresh chats.",
       )}
       <div class="stage-body">
         <div class="attempt-layout">
@@ -509,8 +518,9 @@ function renderCreate() {
               <div>
                 <h3>Attempt ${attemptNumber}</h3>
                 <p>
-                  Open fresh chat ${attemptNumber}, copy the prompt, run it, and
-                  paste only the prompt returned by the LLM.
+                  With browsing or search turned on, open fresh chat
+                  ${attemptNumber}, run the prompt, and paste back only the
+                  prompt your LLM returns.
                 </p>
               </div>
               <span class="tag">${escapeHTML(state.model)}</span>
@@ -531,6 +541,7 @@ function renderCreate() {
               >
                 Preview source
               </button>
+              <span class="tag tag-browsing">Browsing/search on</span>
               <span class="tag">Only “LLM name” is filled</span>
             </div>
             <div class="field">
@@ -703,7 +714,8 @@ function renderFinish() {
             <span class="eyebrow">Your two results</span>
             <h2>Your results</h2>
             <p>
-              Scores are optional. Use the workbook for exact checking.
+              Scores are optional. Use the reference table alongside for a
+              quick comparison.
             </p>
             <div class="score-card">
               <span>
@@ -744,12 +756,9 @@ function renderFinish() {
               </label>
             </div>
             <div class="finish-actions button-row">
-              <a class="button button-primary button-compact" href="${ASSETS.scorer}" download>
-                Download exact scorer
-              </a>
               <button
                 id="restart-tutorial"
-                class="button button-secondary button-compact"
+                class="button button-primary button-compact"
                 type="button"
               >
                 Start again
@@ -960,7 +969,11 @@ function updateFooter() {
 
   if (!finalStage) {
     nextButton.disabled = !canContinue(state.stage);
-    nextButton.innerHTML = `Next: ${escapeHTML(STAGES[state.stage + 1].label)} <span aria-hidden="true">→</span>`;
+    const nextLabel =
+      state.stage === 2 && state.revealOriginal
+        ? "Begin Lab 2"
+        : `Next: ${STAGES[state.stage + 1].label}`;
+    nextButton.innerHTML = `${escapeHTML(nextLabel)} <span aria-hidden="true">→</span>`;
   }
 
   footerHint.textContent = footerMessage(state.stage);
@@ -988,6 +1001,9 @@ function footerMessage(stageIndex) {
   }
   if (stageIndex === 2 && !state.revealOriginal) {
     return "Reveal the reference values after the LLM finishes.";
+  }
+  if (stageIndex === 2 && state.revealOriginal) {
+    return "Lab 1 complete. Next begins Lab 2.";
   }
   if (stageIndex === 3 && !state.attempts.every((value) => value.trim())) {
     const saved = state.attempts.filter((value) => value.trim()).length;
