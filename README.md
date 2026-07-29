@@ -11,11 +11,10 @@ data-extraction pipeline and the results reported in the manuscript.
 ## 👉 New here? Start with the tutorial
 
 If you were sent here to **try the data-extraction workflow and give feedback**,
-go straight to **[`tutorial/`](tutorial/README.md)**. It's a self-contained,
-no-code, ~1-hour walkthrough: benchmark your favourite LLM on one paper, then
-learn to make an LLM design a better extraction prompt. Everything you need
-(prompts, the paper, the benchmark, and a self-scoring spreadsheet) is in that
-folder.
+open the **[guided web tutorial](https://valentinroma26.github.io/romanov-2026-llm-extraction/)**.
+It presents one step at a time, with direct prompt-copy buttons and no page
+scrolling. The same materials remain available in
+**[`tutorial/`](tutorial/README.md)** for readers who prefer the repository.
 
 ---
 
