@@ -55,14 +55,6 @@ for (const file of promptFiles) {
 
 const assets = [
   ["tutorial/paper/ref13.pdf", "assets/ref13.pdf"],
-  [
-    "tutorial/scoring/ref13-scoring-template.xlsx",
-    "assets/ref13-scoring-template.xlsx",
-  ],
-  [
-    "tutorial/benchmark/ref13-ground-truth.xlsx",
-    "assets/ref13-ground-truth.xlsx",
-  ],
 ];
 
 for (const [source, destination] of assets) {

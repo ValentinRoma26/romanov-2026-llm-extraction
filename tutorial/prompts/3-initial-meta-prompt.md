@@ -1,19 +1,3 @@
-# Initial meta-prompt (Lab 2, step 1)
-
-**What this is:** This is *not* an extraction prompt. This is a prompt that asks
-an LLM to *design an extraction prompt for you*. You run it three separate times
-(three fresh chats) to get three independent prompt "attempts".
-
-**How to use it:** Open a fresh chat with your model. Replace `LLM name` on the
-first line with the model you are using. Paste the whole thing. Save the prompt
-the model gives you back. Repeat two more times in two more fresh chats, so you
-end up with **three** designed prompts (attempt 1, attempt 2, attempt 3).
-
-The model may ask you follow-up questions at the end — that is intended. Answer
-them if you like, then take its final prompt.
-
----
-
 Model: LLM name
 1. I need to create a prompt based on the best prompt engineering practices for this model (look online) to extract the following information from PDF articles that I will provide one at a time (not using API). 
 2. using the provided context, search this research space to understand the nuance of the field, terminology and how parameters may be presented and discussed
