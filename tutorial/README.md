@@ -1,5 +1,10 @@
 # Tutorial: benchmark an LLM on scientific data extraction
 
+> **Easiest route:** use the
+> **[guided web tutorial](https://valentinroma26.github.io/romanov-2026-llm-extraction/)**.
+> It shows one step at a time and provides direct copy and preview controls for
+> every prompt.
+
 This no-code tutorial shows how to use a large language model (LLM) to extract
 structured data from one scientific paper and check the answer against a known
 benchmark.
