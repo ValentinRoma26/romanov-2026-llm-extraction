@@ -1,37 +1,36 @@
-# Feedback
+# Tutorial feedback
 
-Thanks for testing the tutorial! Fill this in and send it back (copy it into an
-email, or open a GitHub issue with it). Rough answers are fine.
+Rough answers are welcome.
 
-## About your run
+## Setup
 
-- **Which LLM did you use?** (name + version, e.g. ChatGPT GPT-5.5, Claude Opus 4.8)
-- **Did it accept the PDF directly, or did you paste text?**
-- **How long did the whole tutorial take you?**
+- **Path:** quick / full
+- **LLM name and version:**
+- **Date run:**
+- **Temperature/randomness setting, if visible:**
+- **Spreadsheet:** Excel / LibreOffice / other
+- **Total time:**
 
-## Lab 1 — gold-standard prompt
+## Lab 1 — expert prompt
 
-- **Average accuracy (Scoreboard):** ___ %
-- **Consistency %:** ___ %
-- **How many extra rows did your model tend to produce** (beyond the 6)? ___
-- **Did you need the normalizer prompt?** (yes / no — which runs?)
+- **Run 1 accuracy:**
+- **Average accuracy (full path):**
+- **Consistency (full path):**
+- **Extra rows returned:**
+- **Did you need the normalizer?**
 
-## Lab 2 — LLM-designed master prompt
+## Lab 2 — master prompt
 
-- **Average accuracy:** ___ %
-- **Consistency %:** ___ %
-- **Master prompt vs gold standard — which was better, and by how much?**
+- **Run 1 accuracy:**
+- **Average accuracy (full path):**
+- **Consistency (full path):**
+- **Which prompt performed better?**
 
-## What worked / what didn't
+## Clarity and usability
 
-- **Where did you get stuck or confused?** (be specific — which step, which sheet)
-- **Anything in the instructions that was unclear or wrong?**
-- **Was the scoring sheet easy to use?** (the paste / auto-check / override flow)
-- **Did the auto-check ever mark something wrong that was actually right?**
-  If so, what were the two values?
-- **Anything else?**
-
-## Overall
-
-- **Would this tutorial let a new person reproduce the task without your help?**
-  (yes / mostly / no — why?)
+- **What was the first unclear step?**
+- **Was the seven-column task clear?**
+- **Did the scorer mark an equivalent value wrong? If so, list both values.**
+- **Was the workbook easy to use?**
+- **Could a new LLM user finish without help? Why or why not?**
+- **What one change would improve the tutorial most?**
