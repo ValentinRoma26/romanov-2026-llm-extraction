@@ -18,15 +18,14 @@ No prompt-writing or biology experience is required.
 > modernise, or otherwise edit them. The guidance below explains how to use and
 > score their output without changing the prompts themselves.
 
-## Choose a path
+## How long it takes
 
-- **Quick path — about 20–30 minutes:** do one extraction run in each lab. This
-  is best for learning the workflow.
-- **Full comparison — about 90–120 minutes:** do five independent extraction
-  runs in each lab. This lets you measure accuracy and consistency.
+Plan for about **45–75 minutes**. The tutorial asks you to run the original
+extraction prompt once and the master prompt once.
 
-The full comparison uses at least 14 model calls: five in Lab 1, three
-prompt-design attempts, one aggregation call, and five in Lab 2.
+One run is enough. If you later want to see whether the model gives the same
+answer again, repeat either prompt in a fresh chat and use the optional
+**Run 2–Run 5** workbook tabs. Repetition is entirely your choice.
 
 ## What you need
 
@@ -59,7 +58,7 @@ not part of this tutorial's compatibility check.
 | `prompts/3-initial-meta-prompt.md` | Original prompt-design meta-prompt for Lab 2. |
 | `prompts/4-aggregate-meta-prompt.md` | Original aggregation meta-prompt for Lab 2. |
 | `benchmark/ref13-ground-truth.xlsx` | The six scored benchmark rows. |
-| `scoring/ref13-scoring-template.xlsx` | Workbook that scores five runs. |
+| `scoring/ref13-scoring-template.xlsx` | Workbook that scores one run, with optional repeat tabs. |
 | `feedback/FEEDBACK-TEMPLATE.md` | Short feedback form. |
 
 On GitHub, open a prompt file and click **Raw** before copying it. This avoids
@@ -115,8 +114,7 @@ not part of this six-row tutorial benchmark.
 1. Open `scoring/ref13-scoring-template.xlsx`.
 2. Read the **① Start Here** tab.
 3. Record the model name, version, date, and whether it can browse the web.
-4. If the model exposes a temperature or randomness setting, keep it unchanged
-   for every run and record it.
+4. If the model exposes a temperature or randomness setting, record it.
 
 The workbook colours mean:
 
@@ -164,15 +162,14 @@ The checker accepts common presentation differences, including attached units,
 If the model returns additional high-affinity or otherwise out-of-scope rows,
 do not score them. Record their number in the yellow box if useful.
 
-### 4. Finish the chosen path
+### 4. Read the result
 
-- **Quick path:** continue to Lab 2 after Run 1.
-- **Full comparison:** repeat the extraction in four fresh chats and fill
-  **Run 2** through **Run 5**.
+Open the **Scoreboard** tab to see the Run 1 accuracy. It shows `Incomplete`
+until all 42 blue cells are filled. A completed run can legitimately score
+0/42.
 
-The **Scoreboard** shows `Incomplete` until all 42 blue cells for a run are
-filled. A completed run can legitimately score 0/42. Consistency appears only
-after all five runs are complete.
+That completes Lab 1. Continue to Lab 2. The remaining Run tabs are optional;
+use them only if you choose to repeat the extraction later.
 
 ## Lab 2 — Use the original meta-prompts
 
@@ -185,9 +182,6 @@ the results as Attempt 1, Attempt 2, and Attempt 3.
 
 This meta-prompt asks the model to look online. If the model cannot browse, do
 not rewrite the prompt; record that limitation with your results.
-
-For the quick path, one candidate is enough. Use it directly as the master
-prompt and skip aggregation.
 
 ### 2. Create one master prompt
 
@@ -203,17 +197,16 @@ placeholders with the generated prompts.
 3. Paste the master prompt and attach the same `paper/ref13.pdf`.
 4. From the answer, paste only the same seven scored data fields into the
    workbook.
-5. For the full comparison, repeat this in five fresh chats.
 
 ### 4. Compare
 
 | Result | Original extraction prompt | Master prompt |
 |---|---:|---:|
-| Average accuracy | ___ % | ___ % |
-| Consistency (five-run path only) | ___ % | ___ % |
+| Accuracy | ___ % | ___ % |
 
 One paper cannot establish that a prompt is generally better. Treat the result
-as a small comparison within the research design.
+as a small comparison within the research design. Repeating either prompt is
+optional and is not required to finish the tutorial.
 
 ## Troubleshooting
 
@@ -231,4 +224,4 @@ as a small comparison within the research design.
 ## When you finish
 
 Fill in `feedback/FEEDBACK-TEMPLATE.md`. Include the model version, browsing
-ability, chosen path, time taken, scores, and the first unclear step.
+ability, time taken, scores, and the first unclear step.
