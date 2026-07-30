@@ -1,12 +1,14 @@
 const STAGES = [
-  { id: "prepare", label: "Prepare", title: "Start with the paper" },
-  { id: "original", label: "Original", title: "Run the original prompt" },
-  { id: "check", label: "Check", title: "Check the first answer" },
-  { id: "create", label: "Create", title: "Create three candidates" },
-  { id: "combine", label: "Combine", title: "Combine the candidates" },
-  { id: "test", label: "Test", title: "Test the master prompt" },
-  { id: "finish", label: "Finish", title: "Compare and finish" },
+  { id: "prepare", label: "Set up", phase: "Prep" },
+  { id: "original", label: "Run", phase: "Lab 1" },
+  { id: "check", label: "Check", phase: "Lab 1" },
+  { id: "create", label: "Draft", phase: "Lab 2" },
+  { id: "combine", label: "Merge", phase: "Lab 2" },
+  { id: "test", label: "Re-run", phase: "Lab 2" },
+  { id: "finish", label: "Compare", phase: "Result" },
 ];
+
+const PHASES = ["Prep", "Lab 1", "Lab 2", "Result"];
 
 const PROMPT_FILES = {
   original: {
@@ -29,6 +31,8 @@ const PROMPT_FILES = {
 
 const ASSETS = {
   paper: "./assets/ref13.pdf",
+  repository:
+    "https://github.com/ValentinRoma26/romanov-2026-llm-extraction/tree/main/tutorial",
 };
 
 const STORAGE_KEY = "romanov-tutorial-progress-v1";
@@ -52,11 +56,10 @@ let prompts = {};
 let benchmark = null;
 let currentPreview = "";
 let toastTimer = null;
-let navDirection = "forward";
-let completedSteps = new Set();
 
 const stageRoot = document.querySelector("#stage");
 const progressList = document.querySelector("#progress-list");
+const phaseRow = document.querySelector("#phase-row");
 const backButton = document.querySelector("#back-button");
 const nextButton = document.querySelector("#next-button");
 const footerHint = document.querySelector("#footer-hint");
@@ -76,9 +79,9 @@ async function init() {
     <section class="stage-card" data-testid="loading-stage">
       <div class="stage-heading">
         <div>
-          <span class="eyebrow">Loading the research materials</span>
-          <h1>Preparing your tutorial…</h1>
-          <p>The prompts are being read directly from the published source files.</p>
+          <span class="eyebrow">Prep</span>
+          <h1>Reading the prompts</h1>
+          <p>The four prompts load straight from the repository, unedited.</p>
         </div>
       </div>
     </section>
@@ -89,7 +92,7 @@ async function init() {
       Object.entries(PROMPT_FILES).map(async ([key, value]) => {
         const response = await fetch(value.path);
         if (!response.ok) {
-          throw new Error(`Could not load ${value.title}.`);
+          throw new Error(`Could not read ${value.title}.`);
         }
         return [key, await response.text()];
       }),
@@ -98,9 +101,10 @@ async function init() {
 
     const benchmarkResponse = await fetch("./benchmark.json");
     if (!benchmarkResponse.ok) {
-      throw new Error("Could not load the benchmark table.");
+      throw new Error("Could not read the reference table.");
     }
     benchmark = await benchmarkResponse.json();
+    buildRail();
     bindGlobalEvents();
     render();
   } catch (error) {
@@ -109,14 +113,9 @@ async function init() {
 }
 
 function bindGlobalEvents() {
-  backButton.addEventListener("click", () => {
-    if (state.stage === 0) return;
-    goToStage(state.stage - 1);
-  });
-
+  backButton.addEventListener("click", () => goToStage(state.stage - 1));
   nextButton.addEventListener("click", () => {
-    if (!canContinue(state.stage) || state.stage >= STAGES.length - 1) return;
-    goToStage(state.stage + 1);
+    if (canContinue(state.stage)) goToStage(state.stage + 1);
   });
 
   closeDialog.addEventListener("click", () => previewDialog.close());
@@ -131,7 +130,6 @@ function bindGlobalEvents() {
 function goToStage(index) {
   const target = Math.max(0, Math.min(STAGES.length - 1, index));
   if (target === state.stage) return;
-  navDirection = target > state.stage ? "forward" : "back";
   state.stage = target;
   state.maxStage = Math.max(state.maxStage, target);
   persist();
@@ -139,8 +137,6 @@ function goToStage(index) {
 }
 
 function render() {
-  renderProgress();
-
   const renderers = [
     renderPrepare,
     renderOriginal,
@@ -151,30 +147,28 @@ function render() {
     renderFinish,
   ];
 
-  stageRoot.dataset.direction = navDirection;
   stageRoot.innerHTML = renderers[state.stage]();
+  updateRail();
   bindStageEvents();
   updateFooter();
-  document.title = `${STAGES[state.stage].label} · LLM Extraction Tutorial`;
+  document.title = `${STAGES[state.stage].label} · Ca²⁺/TnC extraction assay`;
 }
 
-/**
- * The rail is built once and then updated in place, so the connector fill and
- * the completion tick animate between states instead of remounting.
- */
-function renderProgress() {
-  if (!progressList.children.length) {
-    buildProgress();
-  }
-  updateProgress();
-}
+/* Rail ------------------------------------------------------------------ */
 
-function buildProgress() {
+/* Built once, then updated in place so the titration fill actually
+   transitions between steps rather than remounting at its final width. */
+function buildRail() {
+  phaseRow.innerHTML = PHASES.map(
+    (phase) =>
+      `<span class="phase-label" data-phase="${escapeHTML(phase)}">${escapeHTML(phase)}</span>`,
+  ).join("");
+
   progressList.innerHTML = STAGES.map(
     (stage, index) => `
       <li class="progress-step">
         <button class="progress-button" type="button" data-stage-index="${index}">
-          <span class="progress-number">${index + 1}</span>
+          <span class="progress-dot"></span>
           <span class="progress-label">${escapeHTML(stage.label)}</span>
         </button>
       </li>
@@ -189,32 +183,24 @@ function buildProgress() {
   });
 }
 
-function updateProgress() {
-  const nextCompleted = new Set();
+function updateRail() {
+  const currentPhase = STAGES[state.stage].phase;
+
+  phaseRow.querySelectorAll(".phase-label").forEach((label) => {
+    label.classList.toggle("is-active", label.dataset.phase === currentPhase);
+  });
 
   progressList.querySelectorAll(".progress-step").forEach((step, index) => {
     const isCurrent = index === state.stage;
     const isComplete = index < state.maxStage;
     const button = step.querySelector(".progress-button");
-    const number = step.querySelector(".progress-number");
-
-    if (isComplete) nextCompleted.add(index);
 
     step.classList.toggle("is-current", isCurrent);
     step.classList.toggle("is-complete", isComplete);
-
-    // Pop the tick only on the render where the step first turns complete.
-    if (isComplete && !completedSteps.has(index)) {
-      step.classList.remove("just-completed");
-      void step.offsetWidth;
-      step.classList.add("just-completed");
-    }
-
-    number.textContent = isComplete ? "✓" : String(index + 1);
     button.disabled = index > state.maxStage;
     button.setAttribute(
       "aria-label",
-      `${STAGES[index].label}${isComplete ? ", completed" : ""}`,
+      `${STAGES[index].phase}, ${STAGES[index].label}${isComplete ? ", done" : ""}`,
     );
     if (isCurrent) {
       button.setAttribute("aria-current", "step");
@@ -222,11 +208,16 @@ function updateProgress() {
       button.removeAttribute("aria-current");
     }
   });
-
-  completedSteps = nextCompleted;
 }
 
-function stageHeading(kicker, title, description) {
+/* Stage scaffolding ----------------------------------------------------- */
+
+function stageHeading(title, description) {
+  const stage = STAGES[state.stage];
+  const kicker =
+    stage.phase === "Prep" || stage.phase === "Result"
+      ? stage.phase
+      : `${stage.phase} · ${stage.label}`;
   return `
     <div class="stage-heading">
       <div>
@@ -234,89 +225,169 @@ function stageHeading(kicker, title, description) {
         <h1>${escapeHTML(title)}</h1>
         ${description ? `<p>${escapeHTML(description)}</p>` : ""}
       </div>
-      <span class="stage-count">Step ${state.stage + 1} of ${STAGES.length}</span>
+      <span class="step-tally">step <b>${state.stage + 1}</b> / ${STAGES.length}</span>
     </div>
   `;
 }
+
+/* The reference table, redacted or resolved. Cells carry their column index
+   so the reveal wipes left to right, the way a readout prints. */
+function assayGrid({ revealed, showReveal, showHandoff, compact }) {
+  if (!benchmark) return "";
+  const valueCount = benchmark.rows.length * benchmark.fields.length;
+
+  return `
+    <div class="assay ${revealed ? "is-revealed" : ""} ${compact ? "assay-compact" : ""}" id="assay-grid">
+      ${
+        showReveal
+          ? `
+            <div class="reveal-bar">
+              <p>
+                Compare these with the six matching K2 rows in your model's
+                answer. Reveal them once it has finished.
+              </p>
+              <button
+                id="reveal-original"
+                class="button button-primary"
+                type="button"
+                data-testid="reveal-reference"
+              >
+                Reveal reference values
+              </button>
+            </div>
+          `
+          : ""
+      }
+      <div class="assay-frame">
+        <table class="assay-table" data-testid="benchmark-table">
+          <thead>
+            <tr>
+              ${benchmark.fields
+                .map(
+                  (field) =>
+                    `<th class="assay-head" scope="col">${withSuperscripts(field)}</th>`,
+                )
+                .join("")}
+            </tr>
+          </thead>
+          <tbody>
+            ${benchmark.rows
+              .map(
+                (row) => `
+                  <tr>
+                    ${row
+                      .map(
+                        (value, column) => `
+                          <td class="assay-cell" style="--col: ${column}">
+                            <span>${withSuperscripts(value)}</span>
+                          </td>
+                        `,
+                      )
+                      .join("")}
+                  </tr>
+                `,
+              )
+              .join("")}
+          </tbody>
+        </table>
+      </div>
+      <div class="assay-caption">
+        <span>${escapeHTML(benchmark.source)}</span>
+        <span>
+          <b>${valueCount}</b> values · ${benchmark.rows.length} rows ×
+          ${benchmark.fields.length} columns
+        </span>
+      </div>
+      ${
+        showHandoff
+          ? `
+            <div class="handoff" data-testid="lab2-transition">
+              <span>
+                <strong>Lab 1 done. In Lab 2 you write your own prompt.</strong>
+                <small>Turn on web browsing or search in your model before continuing.</small>
+              </span>
+              <span class="tag tag-on">Browsing needed</span>
+            </div>
+          `
+          : ""
+      }
+    </div>
+  `;
+}
+
+/* Stages ---------------------------------------------------------------- */
 
 function renderPrepare() {
   return `
     <section class="stage-card" data-testid="stage-prepare">
       ${stageHeading(
-        "A no-code scientific extraction exercise",
-        "Start with one paper",
-        "You will run each extraction prompt once. Additional runs are entirely optional.",
+        "Set up the run",
+        "One paper, one model, two prompts. Everything you type stays in this browser.",
       )}
       <div class="stage-body">
         <div class="prepare-grid">
-          <section class="download-card">
-            <div>
-              <span class="eyebrow">Your source document</span>
-              <h2>ref13.pdf</h2>
-              <p>
-                Use this same scientific paper throughout the tutorial. Download it
-                now so it is ready to attach to your LLM.
-              </p>
+          <section class="panel">
+            <span class="eyebrow">The paper</span>
+            <h2 class="panel-title">ref13.pdf</h2>
+            <p class="panel-lede">
+              Calcium and magnesium binding to bovine cardiac troponin, measured
+              by scintillation counting at 4 °C. You will extract one table from
+              it, twice.
+            </p>
+            <div class="button-row" style="margin-top: 18px">
+              <a
+                class="button button-primary"
+                href="${ASSETS.paper}"
+                download="ref13.pdf"
+                data-testid="download-paper"
+              >
+                Download the paper
+              </a>
+              <a
+                class="button button-secondary"
+                href="${ASSETS.paper}"
+                target="_blank"
+                rel="noopener"
+              >
+                Open in a new tab
+              </a>
             </div>
-            <div>
-              <div class="button-row">
-                <a
-                  class="button button-primary"
-                  href="${ASSETS.paper}"
-                  download="ref13.pdf"
-                  data-testid="download-paper"
-                >
-                  Download paper
-                </a>
-                <a
-                  class="button button-secondary"
-                  href="${ASSETS.paper}"
-                  target="_blank"
-                  rel="noopener"
-                >
-                  Preview PDF
-                </a>
-              </div>
-              <div class="info-strip">
-                Uploading the paper later sends it to your chosen LLM provider.
-                Check that provider’s privacy settings first.
-              </div>
+            <div class="note">
+              Attaching the paper sends it to your model's provider. Check their
+              data settings first.
             </div>
+            <p class="citation">
+              <b>Holroyde, M. J., Robertson, S. P., Johnson, J. D., Solaro, R. J.,
+              &amp; Potter, J. D. (1980).</b>
+              The calcium and magnesium binding sites on cardiac troponin and
+              their role in the regulation of myofibrillar adenosine
+              triphosphatase. <i>Journal of Biological Chemistry, 255</i>(24),
+              11688–11693.
+            </p>
           </section>
 
-          <section class="panel panel-tinted">
-            <span class="eyebrow">Before we begin</span>
-            <h2>Which LLM are you using?</h2>
-            <p>
-              A short name is enough—for example, ChatGPT, Claude, or Gemini.
-              The site uses it only to fill a designated prompt placeholder.
+          <section class="panel panel-sunk">
+            <span class="eyebrow">What you are extracting</span>
+            <h2 class="panel-title">Table I, six low-affinity rows</h2>
+            <p class="panel-lede">
+              This is the answer, held back. Every cell counts for one point, so
+              a perfect run scores 42. You reveal it in step 3.
             </p>
-            <div class="field" style="margin-top: 20px">
-              <label for="model-name">LLM name</label>
+            <div class="field" style="margin-top: 18px">
+              <label for="model-name">Which model are you testing?</label>
               <input
                 id="model-name"
                 data-testid="model-name"
                 type="text"
                 maxlength="80"
                 autocomplete="off"
-                placeholder="e.g. ChatGPT"
+                placeholder="ChatGPT, Claude, Gemini…"
                 value="${escapeHTML(state.model)}"
               />
             </div>
-            <ul class="action-list">
-              <li>
-                <span class="list-number">1</span>
-                <span><strong>Download</strong><small>Keep the PDF nearby.</small></span>
-              </li>
-              <li>
-                <span class="list-number">2</span>
-                <span><strong>Copy</strong><small>Use the prompts verbatim.</small></span>
-              </li>
-              <li>
-                <span class="list-number">3</span>
-                <span><strong>Compare</strong><small>Eyeball the reference values.</small></span>
-              </li>
-            </ul>
+            <div style="margin-top: 16px; min-height: 0; display: flex">
+              ${assayGrid({ revealed: false, showReveal: false, showHandoff: false, compact: true })}
+            </div>
           </section>
         </div>
       </div>
@@ -328,56 +399,47 @@ function renderOriginal() {
   return `
     <section class="stage-card" data-testid="stage-original">
       ${stageHeading(
-        "Lab 1 · Baseline extraction",
         "Run the original prompt",
-        "",
+        "The prompt the research team used, unchanged. Run it once.",
       )}
       <div class="stage-body">
         <div class="action-grid">
           <section class="panel">
-            <span class="eyebrow">Do these in order</span>
-            <h3>One prompt. One run.</h3>
-            <ul class="action-list">
+            <span class="eyebrow">Protocol</span>
+            <ol class="protocol">
               <li>
-                <span class="list-number">1</span>
                 <span>
                   <strong>Open a fresh chat</strong>
-                  <small>No earlier conversation should be present.</small>
+                  <small>No earlier messages, so one run cannot influence the next.</small>
                 </span>
               </li>
               <li>
-                <span class="list-number">2</span>
                 <span>
                   <strong>Attach ref13.pdf</strong>
-                  <small>Use the paper from the previous step.</small>
+                  <small>The same paper you downloaded in step 1.</small>
                 </span>
               </li>
               <li>
-                <span class="list-number">3</span>
                 <span>
-                  <strong>Paste and run</strong>
-                  <small>The answer may contain more than six rows.</small>
+                  <strong>Paste the prompt and run it</strong>
+                  <small>Expect more than six rows back. That is fine.</small>
                 </span>
               </li>
-            </ul>
+            </ol>
             <div class="completion-check">
               <label class="check-label">
-                <input
-                  id="ran-original"
-                  type="checkbox"
-                  ${state.ranOriginal ? "checked" : ""}
-                />
-                <span>I have run the original prompt with the PDF.</span>
+                <input id="ran-original" type="checkbox" ${state.ranOriginal ? "checked" : ""} />
+                <span>I ran the original prompt with the paper attached.</span>
               </label>
             </div>
           </section>
 
-          <section class="prompt-card">
-            <span class="prompt-icon" aria-hidden="true">&gt;_</span>
-            <h2>Original extraction prompt</h2>
-            <p>
-              This is the research prompt exactly as supplied. Copy it directly,
-              or preview the full source first.
+          <section class="prompt-panel">
+            <span class="prompt-sigil">PROMPT 1 / 4</span>
+            <h2 class="panel-title">Original extraction prompt</h2>
+            <p class="panel-lede">
+              Research material. Copy it as it is — shortening or tidying it
+              changes what you are measuring.
             </p>
             <div class="button-row">
               <button
@@ -388,39 +450,37 @@ function renderOriginal() {
               >
                 Copy prompt
               </button>
-              <button
-                class="button button-secondary"
-                type="button"
-                data-preview-prompt="original"
-              >
-                Preview prompt
+              <button class="button button-secondary" type="button" data-preview-prompt="original">
+                Read it first
               </button>
               <a class="button button-quiet" href="${ASSETS.paper}" download="ref13.pdf">
-                Download PDF
+                Download the paper
               </a>
             </div>
             <div class="prompt-meta">
-              <span class="tag">Verbatim research material</span>
               <span class="tag">Fresh chat</span>
               <span class="tag">PDF attached</span>
+              <span class="tag">Verbatim</span>
             </div>
-            <div class="info-strip">
-              Messy answer? You can
-              <button
-                class="button button-quiet button-compact"
-                type="button"
-                data-copy-prompt="normalizer"
-              >
-                copy the optional normalizer
-              </button>
-              or
-              <button
-                class="button button-quiet button-compact"
-                type="button"
-                data-preview-prompt="normalizer"
-              >
-                preview it
-              </button>.
+            <div class="note">
+              If the answer comes back messy, the normalizer prompt tidies the
+              formatting without changing values.
+              <span class="button-row" style="margin-top: 8px">
+                <button
+                  class="button button-secondary button-compact"
+                  type="button"
+                  data-copy-prompt="normalizer"
+                >
+                  Copy normalizer
+                </button>
+                <button
+                  class="button button-quiet button-compact"
+                  type="button"
+                  data-preview-prompt="normalizer"
+                >
+                  Read it
+                </button>
+              </span>
             </div>
           </section>
         </div>
@@ -433,75 +493,31 @@ function renderCheck() {
   return `
     <section class="stage-card" data-testid="stage-check">
       ${stageHeading(
-        "Lab 1 · Reference check",
-        "Check the first answer",
-        "Reveal the six benchmark rows only after your LLM has finished.",
+        "Check the answer",
+        "Score one point per matching cell. Scoring is optional — the comparison is the point.",
       )}
-      <div class="stage-body">
-        <div class="reference-layout ${state.revealOriginal ? "is-revealed" : ""}">
-          <div class="reference-toolbar">
-            <div>
-              <h2>Reference values</h2>
-              <p>
-                Six low-affinity K2 rows · 42 values in total · research labels preserved
-              </p>
-            </div>
-            <div class="button-row">
-              <label class="score-row" for="original-score">
-                <span class="score-suffix">Optional score</span>
-                <input
-                  id="original-score"
-                  class="score-input"
-                  type="number"
-                  min="0"
-                  max="42"
-                  inputmode="numeric"
-                  value="${escapeHTML(state.originalScore)}"
-                  aria-label="Original prompt score out of 42"
-                />
-                <span class="score-suffix">/ 42</span>
-              </label>
-            </div>
-          </div>
-          <div class="reference-surface">
-            ${
-              state.revealOriginal
-                ? benchmarkTable()
-                : `
-                  <div class="reveal-card">
-                    <span class="eyebrow">Avoid seeing the answer early</span>
-                    <h3>Has your LLM finished?</h3>
-                    <p>
-                      Reveal the values, then compare them with the six matching K2
-                      rows in your model’s answer.
-                    </p>
-                    <button
-                      id="reveal-original"
-                      class="button button-primary"
-                      type="button"
-                      data-testid="reveal-reference"
-                    >
-                      Reveal reference values
-                    </button>
-                  </div>
-                `
-            }
-          </div>
-          ${
-            state.revealOriginal
-              ? `
-                <div class="lab-transition" data-testid="lab2-transition">
-                  <span class="transition-badge">Lab 1 complete</span>
-                  <span class="transition-copy">
-                    <strong>Next, you will design a master prompt in Lab 2.</strong>
-                    <small>Before continuing, turn on web browsing or search in your LLM.</small>
-                  </span>
-                  <span class="transition-next" aria-hidden="true">Lab 2 →</span>
-                </div>
-              `
-              : ""
-          }
+      <div class="stage-body" style="display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 14px">
+        <div class="reveal-bar" style="padding: 0; justify-content: flex-end">
+          <label class="score-row" for="original-score">
+            <span class="score-suffix">Values matched</span>
+            <input
+              id="original-score"
+              class="score-input"
+              type="number"
+              min="0"
+              max="42"
+              inputmode="numeric"
+              value="${escapeHTML(state.originalScore)}"
+              aria-label="Values matched by the original prompt, out of 42"
+            />
+            <span class="score-suffix">/ 42</span>
+          </label>
         </div>
+        ${assayGrid({
+          revealed: state.revealOriginal,
+          showReveal: true,
+          showHandoff: true,
+        })}
       </div>
     </section>
   `;
@@ -509,82 +525,67 @@ function renderCheck() {
 
 function renderCreate() {
   const attemptNumber = state.activeAttempt + 1;
-  const completeCount = state.attempts.filter((value) => value.trim()).length;
   return `
     <section class="stage-card" data-testid="stage-create">
       ${stageHeading(
-        "Lab 2 · Prompt design",
-        "Create three candidate prompts",
-        "Turn on web browsing or search in your LLM, then run the same meta-prompt in three fresh chats.",
+        "Write three candidates",
+        "Run the same meta-prompt in three separate chats, with browsing on, and keep each prompt it writes.",
       )}
       <div class="stage-body">
         <div class="attempt-layout">
           <section class="attempt-sidebar">
             <div>
-              <span class="eyebrow">Three independent chats</span>
-              <h2>Candidate prompts</h2>
-              <p>
-                Your pasted prompts stay in this browser. They are needed only to
-                build the aggregate prompt in the next step.
+              <span class="eyebrow">Three chats</span>
+              <p class="panel-lede">
+                Three independent runs, so one lucky answer does not decide the
+                result.
               </p>
             </div>
-            <div class="attempt-tabs" role="tablist" aria-label="Candidate prompt attempts">
+            <div class="attempt-tabs" role="tablist" aria-label="Candidate prompts">
               ${state.attempts
                 .map(
                   (value, index) => `
                     <button
-                      class="attempt-tab ${index === state.activeAttempt ? "is-current" : ""} ${value.trim() ? "is-complete" : ""}"
+                      class="attempt-tab ${index === state.activeAttempt ? "is-current" : ""} ${value.trim() ? "is-saved" : ""}"
                       type="button"
                       role="tab"
                       aria-selected="${index === state.activeAttempt}"
                       data-attempt-tab="${index}"
                     >
-                      <strong>Attempt ${index + 1}</strong>
-                      <span>${value.trim() ? "Saved ✓" : "Waiting"}</span>
+                      <strong>Candidate ${index + 1}</strong>
+                      <span>${value.trim() ? "saved" : "empty"}</span>
                     </button>
                   `,
                 )
                 .join("")}
             </div>
-            <div class="attempt-progress">${completeCount} of 3 attempts saved</div>
+            <div class="attempt-progress">${savedCount()} / 3 saved</div>
           </section>
 
           <section class="attempt-editor">
             <div class="attempt-editor-header">
               <div>
-                <h3 data-attempt-title>Attempt ${attemptNumber}</h3>
-                <p data-attempt-copy>
-                  ${escapeHTML(attemptInstruction(attemptNumber))}
-                </p>
+                <span class="eyebrow">Candidate <span data-attempt-number>${attemptNumber}</span></span>
+                <p data-attempt-copy>${escapeHTML(attemptInstruction(attemptNumber))}</p>
               </div>
               <span class="tag">${escapeHTML(state.model)}</span>
             </div>
             <div class="button-row">
-              <button
-                id="copy-initial"
-                class="button button-primary"
-                type="button"
-                data-testid="copy-initial"
-              >
+              <button id="copy-initial" class="button button-primary" type="button" data-testid="copy-initial">
                 Copy meta-prompt
               </button>
-              <button
-                id="preview-initial"
-                class="button button-secondary"
-                type="button"
-              >
-                Preview source
+              <button id="preview-initial" class="button button-secondary" type="button">
+                Read it first
               </button>
-              <span class="tag tag-browsing">Browsing/search on</span>
-              <span class="tag">Only “LLM name” is filled</span>
+              <span class="tag tag-on">Browsing on</span>
             </div>
-            <div class="field">
-              <label for="attempt-output">Paste the candidate prompt returned by your LLM</label>
+            <div class="field field-fill">
+              <label for="attempt-output">Paste the prompt your model wrote</label>
               <textarea
                 id="attempt-output"
                 data-testid="attempt-output"
                 spellcheck="false"
-                placeholder="Paste candidate prompt ${attemptNumber} here…"
+                placeholder="Paste candidate ${attemptNumber} here…"
               ></textarea>
             </div>
           </section>
@@ -594,58 +595,54 @@ function renderCreate() {
   `;
 }
 
-function attemptInstruction(attemptNumber) {
-  return `With browsing or search turned on, open fresh chat ${attemptNumber}, run the prompt, and paste back only the prompt your LLM returns.`;
-}
-
 function renderCombine() {
   return `
     <section class="stage-card" data-testid="stage-combine">
       ${stageHeading(
-        "Lab 2 · Synthesis",
-        "Combine the three candidates",
-        "The site fills only the three designated attempt placeholders in the unchanged aggregate prompt.",
+        "Merge the candidates",
+        "The aggregate prompt is unchanged — your three candidates drop into its three placeholders.",
       )}
       <div class="stage-body">
         <div class="combine-grid">
-          <section class="panel panel-warm">
-            <span class="eyebrow">Ready to combine</span>
-            <h2>Three attempts ready</h2>
-            <p>
-              Open a fresh chat, paste the completed prompt, and run it.
-            </p>
+          <section class="panel">
+            <span class="eyebrow">Ready</span>
+            <h2 class="panel-title">Three candidates in</h2>
             <ul class="combine-status">
               ${state.attempts
                 .map(
                   (_, index) => `
-                    <li>
-                      <span>Attempt ${index + 1} ✓</span>
-                    </li>
+                    <li><i></i> Candidate ${index + 1} saved</li>
                   `,
                 )
                 .join("")}
             </ul>
             <div class="combine-actions">
               <button id="copy-aggregate" class="button button-primary" type="button">
-                Copy completed prompt
+                Copy the merged prompt
               </button>
               <button id="preview-aggregate" class="button button-secondary" type="button">
-                Preview completed
+                Read the merged prompt
               </button>
               <button id="preview-aggregate-source" class="button button-quiet" type="button">
-                View source
+                Read the template
               </button>
+            </div>
+            <div class="note">
+              Run it in a fresh chat. What comes back is your master prompt.
             </div>
           </section>
 
           <section class="master-editor">
-            <h2>Save the master prompt</h2>
-            <p>
-              Paste the master prompt returned by the LLM. It stays in your browser
-              and becomes the prompt you copy in the next step.
+            <div>
+              <span class="eyebrow">Keep the result</span>
+              <h2 class="panel-title">Your master prompt</h2>
+            </div>
+            <p class="panel-lede" style="margin: 0">
+              Paste what your model returns. You will run it against the paper in
+              the next step.
             </p>
-            <div class="field">
-              <label for="master-output">Master prompt returned by your LLM</label>
+            <div class="field field-fill">
+              <label for="master-output">Master prompt</label>
               <textarea
                 id="master-output"
                 data-testid="master-output"
@@ -664,66 +661,56 @@ function renderTest() {
   return `
     <section class="stage-card" data-testid="stage-test">
       ${stageHeading(
-        "Lab 2 · Master extraction",
-        "Test the master prompt",
-        "Open one final fresh chat, attach the same PDF, paste your master prompt, and run it once.",
+        "Run the master prompt",
+        "Same paper, fresh chat, one run — so the two results can be compared.",
       )}
       <div class="stage-body">
         <div class="action-grid">
           <section class="panel">
-            <span class="eyebrow">Do these in order</span>
-            <h3>Use the same paper</h3>
-            <ul class="action-list">
+            <span class="eyebrow">Protocol</span>
+            <ol class="protocol">
               <li>
-                <span class="list-number">1</span>
                 <span>
                   <strong>Open a fresh chat</strong>
-                  <small>Do not reuse a candidate-design chat.</small>
+                  <small>Not one of the three you used to write candidates.</small>
                 </span>
               </li>
               <li>
-                <span class="list-number">2</span>
                 <span>
                   <strong>Attach ref13.pdf</strong>
-                  <small>This keeps the comparison consistent.</small>
+                  <small>The same paper, so only the prompt has changed.</small>
                 </span>
               </li>
               <li>
-                <span class="list-number">3</span>
                 <span>
-                  <strong>Paste and run</strong>
-                  <small>Use the master prompt you just created.</small>
+                  <strong>Paste your master prompt and run it</strong>
+                  <small>Add nothing else to the message.</small>
                 </span>
               </li>
-            </ul>
+            </ol>
             <div class="completion-check">
               <label class="check-label">
-                <input
-                  id="ran-master"
-                  type="checkbox"
-                  ${state.ranMaster ? "checked" : ""}
-                />
-                <span>I have run the master prompt with the PDF.</span>
+                <input id="ran-master" type="checkbox" ${state.ranMaster ? "checked" : ""} />
+                <span>I ran the master prompt with the paper attached.</span>
               </label>
             </div>
           </section>
 
-          <section class="prompt-card">
-            <span class="prompt-icon" aria-hidden="true">&gt;_</span>
-            <h2>Your master prompt</h2>
-            <p>
-              This is the master prompt you pasted on the previous screen. Copy it
-              into the fresh chat without adding other instructions.
+          <section class="prompt-panel">
+            <span class="prompt-sigil">YOUR PROMPT</span>
+            <h2 class="panel-title">Master prompt</h2>
+            <p class="panel-lede">
+              The prompt your model wrote in the last step, saved in this browser.
             </p>
             <div class="button-row">
               <button id="copy-master" class="button button-primary" type="button">
                 Copy master prompt
               </button>
               <button id="preview-master" class="button button-secondary" type="button">
-                Preview prompt
+                Read it
               </button>
               <a class="button button-quiet" href="${ASSETS.paper}" download="ref13.pdf">
-                Download PDF
+                Download the paper
               </a>
             </div>
             <div class="prompt-meta">
@@ -742,102 +729,73 @@ function renderFinish() {
   return `
     <section class="stage-card" data-testid="stage-finish">
       ${stageHeading(
-        "Tutorial complete",
-        "Compare and finish",
-        "Eyeball the same six rows in the master-prompt answer. Repeating either run is optional.",
+        "Compare the two runs",
+        "Same paper, same reference, two prompts. Score the master run against the table.",
       )}
       <div class="stage-body">
         <div class="finish-grid">
-          <section class="panel panel-tinted finish-panel">
-            <span class="eyebrow">Your two results</span>
-            <h2>Your results</h2>
-            <p>
-              Scores are optional. Use the reference table alongside for a
-              quick comparison.
+          <section class="panel">
+            <span class="eyebrow">Result</span>
+            <h2 class="panel-title">Values matched</h2>
+            <p class="panel-lede">
+              One point per cell, out of 42. Leave them blank if you only
+              eyeballed the comparison.
             </p>
-            <div class="score-card">
-              <span>
-                <strong>Original extraction prompt</strong>
-                <small>Lab 1</small>
-              </span>
-              <label class="score-row" for="final-original-score">
-                <input
-                  id="final-original-score"
-                  class="score-input"
-                  type="number"
-                  min="0"
-                  max="42"
-                  inputmode="numeric"
-                  value="${escapeHTML(state.originalScore)}"
-                  aria-label="Original prompt score out of 42"
-                />
-                <span class="score-suffix">/ 42</span>
-              </label>
+            <div style="margin-top: 16px">
+              <div class="score-card">
+                <span>
+                  <strong>Original prompt</strong>
+                  <small>Lab 1</small>
+                </span>
+                <label class="score-row" for="final-original-score">
+                  <input
+                    id="final-original-score"
+                    class="score-input"
+                    type="number"
+                    min="0"
+                    max="42"
+                    inputmode="numeric"
+                    value="${escapeHTML(state.originalScore)}"
+                    aria-label="Values matched by the original prompt, out of 42"
+                  />
+                  <span class="score-suffix">/ 42</span>
+                </label>
+              </div>
+              <div class="score-card">
+                <span>
+                  <strong>Master prompt</strong>
+                  <small>Lab 2</small>
+                </span>
+                <label class="score-row" for="final-master-score">
+                  <input
+                    id="final-master-score"
+                    class="score-input"
+                    type="number"
+                    min="0"
+                    max="42"
+                    inputmode="numeric"
+                    value="${escapeHTML(state.masterScore)}"
+                    aria-label="Values matched by the master prompt, out of 42"
+                  />
+                  <span class="score-suffix">/ 42</span>
+                </label>
+              </div>
             </div>
-            <div class="score-card">
-              <span>
-                <strong>Master prompt</strong>
-                <small>Lab 2</small>
-              </span>
-              <label class="score-row" for="final-master-score">
-                <input
-                  id="final-master-score"
-                  class="score-input"
-                  type="number"
-                  min="0"
-                  max="42"
-                  inputmode="numeric"
-                  value="${escapeHTML(state.masterScore)}"
-                  aria-label="Master prompt score out of 42"
-                />
-                <span class="score-suffix">/ 42</span>
-              </label>
-            </div>
-            <div class="finish-actions button-row">
-              <button
-                id="restart-tutorial"
-                class="button button-primary button-compact"
-                type="button"
-              >
-                Start again
+            <div class="completion-check">
+              <button id="restart-tutorial" class="button button-secondary button-compact" type="button">
+                Clear everything and start over
               </button>
             </div>
           </section>
 
-          <section class="reference-surface">
-            ${benchmarkTable()}
-          </section>
+          ${assayGrid({ revealed: true, showReveal: false, showHandoff: false })}
         </div>
       </div>
     </section>
   `;
 }
 
-function benchmarkTable() {
-  if (!benchmark) return "";
-  return `
-    <div class="table-wrap">
-      <table class="benchmark-table" data-testid="benchmark-table">
-        <thead>
-          <tr>
-            ${benchmark.fields.map((field) => `<th scope="col">${escapeHTML(field)}</th>`).join("")}
-          </tr>
-        </thead>
-        <tbody>
-          ${benchmark.rows
-            .map(
-              (row) => `
-                <tr>
-                  ${row.map((value) => `<td>${escapeHTML(String(value))}</td>`).join("")}
-                </tr>
-              `,
-            )
-            .join("")}
-        </tbody>
-      </table>
-    </div>
-  `;
-}
+/* Events ---------------------------------------------------------------- */
 
 function bindStageEvents() {
   document.querySelectorAll("[data-copy-prompt]").forEach((button) => {
@@ -854,28 +812,21 @@ function bindStageEvents() {
     });
   });
 
-  const modelInput = document.querySelector("#model-name");
-  modelInput?.addEventListener("input", (event) => {
+  document.querySelector("#model-name")?.addEventListener("input", (event) => {
     state.model = event.target.value;
     persist();
     updateFooter();
   });
 
-  const ranOriginal = document.querySelector("#ran-original");
-  ranOriginal?.addEventListener("change", (event) => {
+  document.querySelector("#ran-original")?.addEventListener("change", (event) => {
     state.ranOriginal = event.target.checked;
     persist();
     updateFooter();
   });
 
-  document.querySelector("#reveal-original")?.addEventListener("click", () => {
-    state.revealOriginal = true;
-    persist();
-    render();
-  });
+  document.querySelector("#reveal-original")?.addEventListener("click", revealReference);
 
-  const originalScore = document.querySelector("#original-score");
-  originalScore?.addEventListener("input", (event) => {
+  document.querySelector("#original-score")?.addEventListener("input", (event) => {
     state.originalScore = normalizeScore(event.target.value);
     event.target.value = state.originalScore;
     persist();
@@ -906,32 +857,26 @@ function bindStageEvents() {
     openPreview(
       "Initial meta-prompt",
       prompts.initial,
-      "Displayed verbatim from the repository. The copied version fills only the designated “LLM name” placeholder.",
+      "Shown exactly as stored. The copy you take fills in only the model name.",
     );
   });
 
   document.querySelector("#copy-aggregate")?.addEventListener("click", async (event) => {
-    await copyText(
-      completedAggregatePrompt(),
-      "Completed aggregate prompt copied",
-      event.currentTarget,
-    );
+    await copyText(completedAggregatePrompt(), "Merged prompt copied", event.currentTarget);
   });
 
   document.querySelector("#preview-aggregate")?.addEventListener("click", () => {
     openPreview(
-      "Completed aggregate prompt",
+      "Merged prompt",
       completedAggregatePrompt(),
-      "The original template with only the three designated attempt placeholders filled.",
-      "Working copy",
+      "The template with your three candidates dropped into its placeholders.",
+      "Your copy",
     );
   });
 
-  document
-    .querySelector("#preview-aggregate-source")
-    ?.addEventListener("click", () => {
-      openPreview("Aggregate meta-prompt", prompts.aggregate);
-    });
+  document.querySelector("#preview-aggregate-source")?.addEventListener("click", () => {
+    openPreview("Aggregate meta-prompt", prompts.aggregate);
+  });
 
   const masterOutput = document.querySelector("#master-output");
   if (masterOutput) {
@@ -949,29 +894,26 @@ function bindStageEvents() {
 
   document.querySelector("#preview-master")?.addEventListener("click", () => {
     openPreview(
-      "Your master prompt",
+      "Master prompt",
       state.master,
-      "This is the prompt returned by your LLM and saved in this browser.",
-      "Generated prompt",
+      "Written by your model and saved in this browser.",
+      "Your prompt",
     );
   });
 
-  const ranMaster = document.querySelector("#ran-master");
-  ranMaster?.addEventListener("change", (event) => {
+  document.querySelector("#ran-master")?.addEventListener("change", (event) => {
     state.ranMaster = event.target.checked;
     persist();
     updateFooter();
   });
 
-  const finalOriginalScore = document.querySelector("#final-original-score");
-  finalOriginalScore?.addEventListener("input", (event) => {
+  document.querySelector("#final-original-score")?.addEventListener("input", (event) => {
     state.originalScore = normalizeScore(event.target.value);
     event.target.value = state.originalScore;
     persist();
   });
 
-  const finalMasterScore = document.querySelector("#final-master-score");
-  finalMasterScore?.addEventListener("input", (event) => {
+  document.querySelector("#final-master-score")?.addEventListener("input", (event) => {
     state.masterScore = normalizeScore(event.target.value);
     event.target.value = state.masterScore;
     persist();
@@ -979,36 +921,41 @@ function bindStageEvents() {
 
   document.querySelector("#restart-tutorial")?.addEventListener("click", () => {
     const confirmed = window.confirm(
-      "Start again and clear the prompts saved in this browser?",
+      "This clears your model name, all three candidates, your master prompt and both scores. Continue?",
     );
     if (!confirmed) return;
     state = structuredClone(defaultState);
     persist();
     render();
-    showToast("Tutorial reset");
+    showToast("Cleared");
   });
 }
 
-/**
- * Switching attempts swaps the editor contents in place and cross-fades them,
- * which keeps the surrounding stage still instead of replaying its entrance.
- */
+/* The reveal is the one moment worth animating, so it toggles a class on the
+   live grid instead of re-rendering into its finished state. */
+function revealReference() {
+  const grid = document.querySelector("#assay-grid");
+  state.revealOriginal = true;
+  persist();
+  grid?.classList.add("is-revealed");
+  updateFooter();
+}
+
 function setActiveAttempt(index) {
   if (index === state.activeAttempt) return;
   state.activeAttempt = index;
   persist();
 
   const attemptNumber = index + 1;
-  const editor = document.querySelector(".attempt-editor");
   const textarea = document.querySelector("#attempt-output");
-  const title = document.querySelector("[data-attempt-title]");
+  const number = document.querySelector("[data-attempt-number]");
   const copy = document.querySelector("[data-attempt-copy]");
 
-  if (title) title.textContent = `Attempt ${attemptNumber}`;
+  if (number) number.textContent = String(attemptNumber);
   if (copy) copy.textContent = attemptInstruction(attemptNumber);
   if (textarea) {
     textarea.value = state.attempts[index];
-    textarea.placeholder = `Paste candidate prompt ${attemptNumber} here…`;
+    textarea.placeholder = `Paste candidate ${attemptNumber} here…`;
   }
 
   document.querySelectorAll("[data-attempt-tab]").forEach((button, tabIndex) => {
@@ -1017,25 +964,18 @@ function setActiveAttempt(index) {
     button.setAttribute("aria-selected", String(isCurrent));
   });
 
-  if (editor) {
-    editor.classList.remove("is-swapping");
-    void editor.offsetWidth;
-    editor.classList.add("is-swapping");
-  }
-
   updateFooter();
 }
 
 function updateAttemptStatus() {
-  const completeCount = state.attempts.filter((value) => value.trim()).length;
   const progress = document.querySelector(".attempt-progress");
-  if (progress) progress.textContent = `${completeCount} of 3 attempts saved`;
+  if (progress) progress.textContent = `${savedCount()} / 3 saved`;
 
   document.querySelectorAll("[data-attempt-tab]").forEach((button, index) => {
-    const complete = Boolean(state.attempts[index].trim());
-    button.classList.toggle("is-complete", complete);
+    const saved = Boolean(state.attempts[index].trim());
+    button.classList.toggle("is-saved", saved);
     const status = button.querySelector("span");
-    if (status) status.textContent = complete ? "Saved ✓" : "Waiting";
+    if (status) status.textContent = saved ? "saved" : "empty";
   });
 }
 
@@ -1046,14 +986,15 @@ function updateFooter() {
 
   if (!finalStage) {
     nextButton.disabled = !canContinue(state.stage);
-    const nextLabel =
-      state.stage === 2 && state.revealOriginal
-        ? "Begin Lab 2"
-        : `Next: ${STAGES[state.stage + 1].label}`;
-    nextButton.innerHTML = `${escapeHTML(nextLabel)} <span aria-hidden="true">→</span>`;
+    nextButton.innerHTML = `${escapeHTML(nextLabel())} <span aria-hidden="true">→</span>`;
   }
 
   footerHint.textContent = footerMessage(state.stage);
+}
+
+function nextLabel() {
+  if (state.stage === 2) return "Start Lab 2";
+  return `Next: ${STAGES[state.stage + 1].label}`;
 }
 
 function canContinue(stageIndex) {
@@ -1071,31 +1012,50 @@ function canContinue(stageIndex) {
 
 function footerMessage(stageIndex) {
   if (stageIndex === 0 && !state.model.trim()) {
-    return "Enter the name of your LLM to continue.";
+    return "Name the model you are testing to continue.";
   }
   if (stageIndex === 1 && !state.ranOriginal) {
-    return "Confirm that you ran the prompt to continue.";
+    return "Tick the box once you have run the prompt.";
   }
   if (stageIndex === 2 && !state.revealOriginal) {
-    return "Reveal the reference values after the LLM finishes.";
+    return "Reveal the reference values once your model has finished.";
   }
-  if (stageIndex === 2 && state.revealOriginal) {
-    return "Lab 1 complete. Next begins Lab 2.";
+  if (stageIndex === 2) {
+    return "Turn on browsing or search before starting Lab 2.";
   }
   if (stageIndex === 3 && !state.attempts.every((value) => value.trim())) {
-    const saved = state.attempts.filter((value) => value.trim()).length;
-    return `Paste all three returned prompts to continue · ${saved}/3 saved.`;
+    return `Paste all three candidates to continue — ${savedCount()} of 3 saved.`;
   }
   if (stageIndex === 4 && !state.master.trim()) {
-    return "Paste the master prompt returned by your LLM to continue.";
+    return "Paste the master prompt your model wrote.";
   }
   if (stageIndex === 5 && !state.ranMaster) {
-    return "Confirm that you ran the master prompt to continue.";
+    return "Tick the box once you have run the master prompt.";
   }
   if (stageIndex === 6) {
-    return "One run is enough. Additional runs are optional.";
+    return "One run each is enough. Repeat only if you want to.";
   }
-  return "Your progress is saved in this browser.";
+  return "Saved in this browser.";
+}
+
+/* Helpers --------------------------------------------------------------- */
+
+function savedCount() {
+  return state.attempts.filter((value) => value.trim()).length;
+}
+
+function attemptInstruction(attemptNumber) {
+  return `With browsing or search on, open chat ${attemptNumber}, run the meta-prompt, and paste back only the prompt your model writes.`;
+}
+
+/* Renders 2.5 x 10^5 as 2.5 × 10⁵ and Kd (M^-1) as Kd (M⁻¹). Presentation
+   only — the stored research values are untouched. */
+function withSuperscripts(value) {
+  return escapeHTML(String(value))
+    .replace(/\s*x\s*10\^(-?\d+)/gi, " × 10<sup>$1</sup>")
+    .replace(/\^(-?\d+)/g, "<sup>$1</sup>")
+    .replace(/Ca2\+/g, "Ca<sup>2+</sup>")
+    .replace(/<sup>-/g, "<sup>−");
 }
 
 function filledInitialPrompt() {
@@ -1120,8 +1080,8 @@ function completedAggregatePrompt() {
 function openPreview(
   title,
   text,
-  note = "Displayed verbatim from the repository.",
-  kicker = "Source prompt",
+  note = "Shown exactly as stored in the repository.",
+  kicker = "Research material",
 ) {
   currentPreview = text;
   dialogTitle.textContent = title;
@@ -1146,14 +1106,11 @@ async function copyText(text, successMessage, trigger) {
     document.execCommand("copy");
     helper.remove();
   }
-  flashCopied(trigger);
+  if (trigger) {
+    trigger.classList.add("is-copied");
+    window.setTimeout(() => trigger.classList.remove("is-copied"), 1200);
+  }
   showToast(successMessage);
-}
-
-function flashCopied(trigger) {
-  if (!trigger) return;
-  trigger.classList.add("is-copied");
-  window.setTimeout(() => trigger.classList.remove("is-copied"), 1400);
 }
 
 function showToast(message) {
@@ -1179,10 +1136,7 @@ function loadState() {
     return {
       ...structuredClone(defaultState),
       ...saved,
-      stage: Math.max(
-        0,
-        Math.min(STAGES.length - 1, Number(saved.stage) || 0),
-      ),
+      stage: Math.max(0, Math.min(STAGES.length - 1, Number(saved.stage) || 0)),
       maxStage: Math.max(
         0,
         Math.min(STAGES.length - 1, Number(saved.maxStage) || 0),
@@ -1212,32 +1166,32 @@ function escapeHTML(value) {
 
 function renderLoadError(error) {
   progressList.innerHTML = "";
+  phaseRow.innerHTML = "";
   backButton.disabled = true;
   nextButton.disabled = true;
-  footerHint.textContent = "The original GitHub materials are still available.";
+  footerHint.textContent = "";
   stageRoot.innerHTML = `
     <section class="stage-card">
-      ${stageHeading(
-        "Unable to load the tutorial",
-        "The research files could not be read",
-        error instanceof Error ? error.message : "Please reload the page and try again.",
-      )}
+      <div class="stage-heading">
+        <div>
+          <span class="eyebrow">Prep</span>
+          <h1>The prompts did not load</h1>
+          <p>${escapeHTML(error instanceof Error ? error.message : "The files could not be read.")}</p>
+        </div>
+      </div>
       <div class="stage-body">
-        <section class="panel panel-warm">
-          <h2>Use the source folder</h2>
-          <p>
-            The prompts and paper remain available directly in the GitHub repository.
+        <section class="panel" style="max-width: 60ch">
+          <p class="panel-lede">
+            Reload the page to try again. If it keeps failing, the same prompts
+            and paper are in the repository and work without this site.
           </p>
           <div class="button-row" style="margin-top: 18px">
-            <a
-              class="button button-primary"
-              href="https://github.com/ValentinRoma26/romanov-2026-llm-extraction/tree/main/tutorial"
-            >
-              Open GitHub tutorial
-            </a>
-            <button class="button button-secondary" type="button" onclick="location.reload()">
-              Reload
+            <button class="button button-primary" type="button" onclick="location.reload()">
+              Reload the page
             </button>
+            <a class="button button-secondary" href="${ASSETS.repository}">
+              Open the tutorial folder
+            </a>
           </div>
         </section>
       </div>
