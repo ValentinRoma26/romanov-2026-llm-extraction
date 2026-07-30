@@ -225,7 +225,7 @@ function stageHeading(title, description) {
         <h1>${escapeHTML(title)}</h1>
         ${description ? `<p>${escapeHTML(description)}</p>` : ""}
       </div>
-      <span class="step-tally">step <b>${state.stage + 1}</b> / ${STAGES.length}</span>
+      <span class="step-tally"><b>${state.stage + 1}</b>of ${STAGES.length} steps</span>
     </div>
   `;
 }

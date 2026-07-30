@@ -1,15 +1,15 @@
 /* ==========================================================================
    Ca2+/TnC extraction assay — tutorial interface
 
-   Direction: a bench protocol, not an onboarding wizard. The reader is an
-   experimenter; the model is the unknown; Table I is the reference standard.
-   Colour follows the assay: arsenazo III is pale when free and saturated
-   violet when calcium-bound, so completed steps read as "bound".
+   Direction: clean, modern, light. Colour comes from calcium indicator
+   chemistry — a plate of wells reads pale and cool before the assay, jade
+   where calcium is bound — so "pending" and "resolved" are hues that mean
+   something rather than decoration.
 
-   1. Tokens        5. Stage card     9. Reference table
-   2. Base          6. Panels        10. Dialog + toast
-   3. Header        7. Controls      11. Responsive
-   4. Phase rail    8. Assay grid    12. Reduced motion
+   1. Tokens      5. Panels        9. Table + scores
+   2. Base        6. Controls     10. Dialog + toast
+   3. Header      7. Assay plate  11. Responsive
+   4. Rail        8. Lab 2         12. Reduced motion
    ========================================================================== */
 
 /* 1. Tokens ============================================================= */
@@ -17,58 +17,71 @@
 :root {
   color-scheme: light dark;
 
-  --bench: #e6e9e4;
-  --leaf: #fbfcfa;
-  --leaf-sunk: #f1f3ef;
-  --ink: #171c1a;
-  --graphite: #5b6562;
-  --graphite-light: #8a938f;
-  --rule: #cbd2cd;
-  --rule-firm: #aeb7b2;
-  --bound: #5a3eae;
-  --bound-deep: #452e88;
-  --bound-wash: #ece8f7;
-  --bound-edge: #c7bce6;
+  --field: #f3f6f5;
+  --field-tint: #e9f2ef;
+  --surface: #ffffff;
+  --surface-2: #f8faf9;
+  --ink: #0f1f1c;
+  --muted: #61736f;
+  --faint: #93a19d;
+  --line: #e4eae8;
+  --line-firm: #cdd8d4;
 
-  --grid-line: rgb(23 28 26 / 4.5%);
+  --jade: #0ea47e;
+  --jade-deep: #0b8365;
+  --jade-wash: #e4f5ef;
+  --jade-edge: #a9e0cd;
 
-  --shadow-leaf: 0 1px 1px rgb(23 28 26 / 4%), 0 8px 24px rgb(23 28 26 / 6%);
-  --shadow-lift: 0 2px 4px rgb(23 28 26 / 6%), 0 18px 44px rgb(23 28 26 / 12%);
-  --shadow-modal: 0 32px 80px rgb(23 28 26 / 28%);
+  --pending: #e3e9f4;
+  --pending-edge: #ccd7ea;
 
-  --radius-card: 4px;
-  --radius-unit: 3px;
+  --shadow-soft: 0 1px 2px rgb(15 31 28 / 4%), 0 6px 16px rgb(15 31 28 / 5%);
+  --shadow-card: 0 1px 3px rgb(15 31 28 / 4%), 0 12px 32px rgb(15 31 28 / 7%);
+  --shadow-lift: 0 2px 6px rgb(15 31 28 / 6%), 0 20px 48px rgb(15 31 28 / 11%);
+  --shadow-modal: 0 40px 96px rgb(15 31 28 / 26%);
+  --shadow-jade: 0 2px 6px rgb(14 164 126 / 22%), 0 10px 24px rgb(14 164 126 / 18%);
 
-  --ease: cubic-bezier(0.2, 0, 0, 1);
-  --tick: 180ms;
+  --r-card: 18px;
+  --r-panel: 14px;
+  --r-control: 10px;
+  --r-well: 5px;
 
-  --font-mono:
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --quick: 160ms;
+  --calm: 300ms;
+
+  --sans:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+  --mono:
     ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas,
     "Liberation Mono", monospace;
-  --font-sans:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bench: #141816;
-    --leaf: #1c211f;
-    --leaf-sunk: #171c1a;
-    --ink: #e7ece9;
-    --graphite: #97a19d;
-    --graphite-light: #6b7571;
-    --rule: #333b38;
-    --rule-firm: #48524e;
-    --bound: #a48ce8;
-    --bound-deep: #c0aef0;
-    --bound-wash: rgb(164 140 232 / 13%);
-    --bound-edge: #4b3d75;
+    --field: #0b1412;
+    --field-tint: #0e1a18;
+    --surface: #13201d;
+    --surface-2: #182724;
+    --ink: #e8f0ed;
+    --muted: #93a6a1;
+    --faint: #6b7c78;
+    --line: #223330;
+    --line-firm: #31453f;
 
-    --grid-line: rgb(231 236 233 / 4%);
+    --jade: #2dd4a0;
+    --jade-deep: #62e5bd;
+    --jade-wash: rgb(45 212 160 / 12%);
+    --jade-edge: #2a5d4d;
 
-    --shadow-leaf: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px rgb(0 0 0 / 30%);
-    --shadow-lift: 0 2px 6px rgb(0 0 0 / 46%), 0 20px 48px rgb(0 0 0 / 40%);
-    --shadow-modal: 0 32px 80px rgb(0 0 0 / 68%);
+    --pending: rgb(197 213 238 / 9%);
+    --pending-edge: #2c3a4d;
+
+    --shadow-soft: 0 1px 2px rgb(0 0 0 / 34%), 0 6px 16px rgb(0 0 0 / 26%);
+    --shadow-card: 0 1px 3px rgb(0 0 0 / 40%), 0 14px 36px rgb(0 0 0 / 34%);
+    --shadow-lift: 0 2px 8px rgb(0 0 0 / 46%), 0 22px 52px rgb(0 0 0 / 42%);
+    --shadow-modal: 0 40px 96px rgb(0 0 0 / 66%);
+    --shadow-jade: 0 2px 8px rgb(0 0 0 / 40%), 0 10px 24px rgb(45 212 160 / 14%);
   }
 }
 
@@ -86,12 +99,16 @@ body {
 }
 
 body {
+  position: relative;
   overflow: hidden;
   color: var(--ink);
-  background: var(--bench);
-  font-family: var(--font-sans);
+  /* One soft wash, fixed — light pooling at the top of the field. */
+  background:
+    radial-gradient(60rem 34rem at 50% -12%, var(--field-tint), transparent 72%),
+    var(--field);
+  font-family: var(--sans);
   font-size: 15px;
-  line-height: 1.5;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -107,65 +124,64 @@ a:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid var(--bound);
+  outline: 2px solid var(--jade);
   outline-offset: 2px;
+  border-radius: 4px;
 }
 
 ::selection {
-  color: var(--leaf);
-  background: var(--bound);
+  color: var(--surface);
+  background: var(--jade);
 }
 
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
 }
 
 ::-webkit-scrollbar-thumb {
-  border: 3px solid transparent;
+  border: 4px solid transparent;
   border-radius: 999px;
-  background: var(--rule-firm);
+  background: var(--line-firm);
   background-clip: content-box;
 }
 
-/* Mono is the display and data voice: instrument label, not headline. */
-.mono,
-.stage-heading h1,
-.panel-title,
-.step-tally,
-.assay-cell,
-.assay-head,
-.score-input,
-.prompt-sigil {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
+::-webkit-scrollbar-thumb:hover {
+  background: var(--faint);
+  background-clip: content-box;
 }
 
-.stage-heading h1,
-.panel-title {
-  font-weight: 700;
-  letter-spacing: -0.035em;
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 600;
+  letter-spacing: -0.022em;
+  line-height: 1.14;
+  text-wrap: balance;
 }
 
-/* Structural labels. Never applied to anything carrying a unit. */
+p {
+  text-wrap: pretty;
+}
+
 .eyebrow {
   display: block;
-  color: var(--graphite);
-  font-family: var(--font-mono);
+  color: var(--jade);
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .app-shell {
-  width: min(1440px, 100%);
+  width: min(1460px, 100%);
   height: 100dvh;
   min-height: 560px;
   margin: 0 auto;
-  padding: 0 clamp(16px, 2.6vw, 40px);
+  padding: 0 clamp(16px, 3vw, 44px);
   display: grid;
-  grid-template-rows: 64px 72px minmax(0, 1fr) 72px;
+  grid-template-rows: 68px 76px minmax(0, 1fr) 76px;
 }
 
 /* 3. Header ============================================================= */
@@ -182,36 +198,37 @@ textarea:focus-visible,
   min-width: 0;
   display: inline-flex;
   align-items: center;
-  gap: 11px;
+  gap: 12px;
   color: var(--ink);
   text-decoration: none;
 }
 
-/* Two bound calcium sites — the paper's actual subject, as a mark. */
+/* Four binding sites; the two filled ones are occupied. */
 .brand-mark {
-  width: 30px;
-  height: 30px;
-  flex: 0 0 30px;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   place-content: center;
-  gap: 3px;
-  padding: 5px;
-  border: 1px solid var(--rule-firm);
-  border-radius: 50%;
+  gap: 4px;
+  padding: 7px;
+  border-radius: 11px;
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
 }
 
 .brand-mark i {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--bound);
+  background: var(--jade);
 }
 
 .brand-mark i:nth-child(3),
 .brand-mark i:nth-child(4) {
-  background: transparent;
-  box-shadow: inset 0 0 0 1px var(--rule-firm);
+  background: var(--pending);
+  box-shadow: inset 0 0 0 1px var(--pending-edge);
 }
 
 .brand strong,
@@ -223,21 +240,21 @@ textarea:focus-visible,
 }
 
 .brand strong {
-  font-family: var(--font-mono);
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
 }
 
 .brand small {
-  color: var(--graphite);
-  font-size: 11px;
+  margin-top: 1px;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .header-meta {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   white-space: nowrap;
 }
 
@@ -245,41 +262,46 @@ textarea:focus-visible,
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: var(--graphite);
+  padding: 6px 12px;
+  border-radius: 999px;
+  color: var(--jade-deep);
+  background: var(--jade-wash);
   font-size: 12px;
+  font-weight: 600;
 }
 
 .privacy-pill span {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--bound);
+  background: var(--jade);
   font-size: 0;
 }
 
 .text-link {
-  color: var(--ink);
+  padding: 6px 12px;
+  border-radius: 999px;
+  color: var(--muted);
   font-size: 12px;
+  font-weight: 600;
   text-decoration: none;
-  border-bottom: 1px solid var(--rule-firm);
-  padding-bottom: 1px;
+  transition:
+    color var(--quick) var(--ease),
+    background var(--quick) var(--ease);
 }
 
 .text-link:hover {
-  color: var(--bound);
-  border-bottom-color: var(--bound);
+  color: var(--ink);
+  background: var(--surface);
 }
 
-/* 4. Phase rail ========================================================= */
+/* 4. Rail =============================================================== */
 
-/* Grouped by the tutorial's real phases, because which lab you are in is
-   information the reader needs; seven identical dots throw that away. */
 .progress-nav {
   min-width: 0;
   display: grid;
   align-content: center;
-  gap: 7px;
-  padding-bottom: 4px;
+  gap: 9px;
 }
 
 .phase-row,
@@ -291,18 +313,18 @@ textarea:focus-visible,
   list-style: none;
 }
 
+/* Phases are real structure — which lab you are in — not decoration. */
 .phase-label {
   min-width: 0;
-  padding-bottom: 5px;
-  border-bottom: 1px solid var(--rule);
-  color: var(--graphite-light);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
   overflow: hidden;
+  color: var(--faint);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-overflow: ellipsis;
+  text-transform: uppercase;
   white-space: nowrap;
+  transition: color var(--calm) var(--ease);
 }
 
 .phase-label[data-phase="Prep"] { grid-column: 1 / 2; }
@@ -311,8 +333,7 @@ textarea:focus-visible,
 .phase-label[data-phase="Result"] { grid-column: 7 / 8; }
 
 .phase-label.is-active {
-  color: var(--bound);
-  border-bottom-color: var(--bound);
+  color: var(--jade);
 }
 
 .progress-step {
@@ -320,26 +341,26 @@ textarea:focus-visible,
   min-width: 0;
 }
 
-/* Track and its titration fill. */
 .progress-step::before,
 .progress-step::after {
   position: absolute;
-  top: 6px;
+  top: 5px;
   left: 0;
   right: 0;
-  height: 1px;
+  height: 3px;
+  border-radius: 999px;
   content: "";
 }
 
 .progress-step::before {
-  background: var(--rule-firm);
+  background: var(--line);
 }
 
 .progress-step::after {
-  background: var(--bound);
+  background: var(--jade);
   transform: scaleX(0);
   transform-origin: left center;
-  transition: transform 420ms var(--ease);
+  transition: transform 520ms var(--ease);
 }
 
 .progress-step:first-child::before,
@@ -365,10 +386,10 @@ textarea:focus-visible,
   padding: 0;
   display: grid;
   justify-items: center;
-  gap: 7px;
+  gap: 9px;
   border: 0;
   background: transparent;
-  color: var(--graphite);
+  color: var(--faint);
   cursor: pointer;
 }
 
@@ -376,61 +397,61 @@ textarea:focus-visible,
   cursor: default;
 }
 
-/* Free site: hollow. Bound site: filled. */
 .progress-dot {
   width: 13px;
   height: 13px;
-  border: 1px solid var(--rule-firm);
   border-radius: 50%;
-  background: var(--bench);
+  background: var(--line);
+  box-shadow: 0 0 0 4px var(--field);
   transition:
-    background var(--tick) var(--ease),
-    border-color var(--tick) var(--ease),
-    box-shadow var(--tick) var(--ease);
+    background var(--calm) var(--ease),
+    box-shadow var(--calm) var(--ease),
+    transform var(--calm) var(--ease);
 }
 
 .progress-button:hover:not(:disabled) .progress-dot {
-  border-color: var(--bound);
+  background: var(--jade-edge);
 }
 
 .progress-step.is-complete .progress-dot {
-  border-color: var(--bound);
-  background: var(--bound);
+  background: var(--jade);
 }
 
 .progress-step.is-current .progress-dot {
-  border-color: var(--bound);
-  background: var(--bound);
-  box-shadow: 0 0 0 3px var(--bound-wash);
+  background: var(--jade);
+  transform: scale(1.25);
+  box-shadow:
+    0 0 0 4px var(--field),
+    0 0 0 8px var(--jade-wash);
 }
 
 .progress-label {
   max-width: 100%;
   overflow: hidden;
-  font-size: 11px;
+  font-size: 11.5px;
+  font-weight: 550;
   text-overflow: ellipsis;
   white-space: nowrap;
-  transition: color var(--tick) var(--ease);
+  transition: color var(--calm) var(--ease);
+}
+
+.progress-step.is-complete .progress-label {
+  color: var(--muted);
 }
 
 .progress-step.is-current .progress-label {
   color: var(--ink);
-  font-weight: 600;
+  font-weight: 650;
 }
 
-.progress-button:disabled .progress-label {
-  color: var(--graphite-light);
-}
-
-/* 5. Stage card ========================================================= */
+/* 5. Card and panels ==================================================== */
 
 .stage-frame {
   min-width: 0;
   min-height: 0;
-  padding-bottom: 8px;
+  padding-bottom: 10px;
 }
 
-/* A notebook leaf: quadrille ruling, squared corners, one hairline border. */
 .stage-card {
   width: 100%;
   height: 100%;
@@ -438,38 +459,25 @@ textarea:focus-visible,
   overflow: hidden;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-card);
-  background-color: var(--leaf);
-  background-image:
-    repeating-linear-gradient(
-      to right,
-      var(--grid-line) 0 1px,
-      transparent 1px 26px
-    ),
-    repeating-linear-gradient(
-      to bottom,
-      var(--grid-line) 0 1px,
-      transparent 1px 26px
-    );
-  box-shadow: var(--shadow-leaf);
-  animation: leaf-in 420ms var(--ease) both;
+  border-radius: var(--r-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  animation: card-in 420ms var(--ease) both;
 }
 
-@keyframes leaf-in {
+@keyframes card-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px);
   }
 }
 
 .stage-heading {
-  padding: clamp(16px, 2.2vh, 24px) clamp(20px, 2.8vw, 36px) 14px;
+  padding: clamp(18px, 2.4vh, 28px) clamp(22px, 3vw, 40px) 18px;
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 24px;
-  border-bottom: 1px solid var(--rule);
+  gap: 28px;
 }
 
 .stage-heading > div {
@@ -477,37 +485,46 @@ textarea:focus-visible,
 }
 
 .stage-heading h1 {
-  max-width: 40ch;
-  margin: 6px 0 5px;
-  font-size: clamp(23px, 2.5vw, 34px);
-  line-height: 1.08;
+  max-width: 24ch;
+  margin: 9px 0 7px;
+  font-size: clamp(26px, 2.9vw, 40px);
+  font-weight: 620;
+  letter-spacing: -0.032em;
 }
 
 .stage-heading p {
-  max-width: 66ch;
+  max-width: 68ch;
   margin: 0;
-  color: var(--graphite);
-  font-size: clamp(13px, 1.1vw, 15px);
+  color: var(--muted);
+  font-size: clamp(13px, 1.15vw, 15.5px);
 }
 
+/* Figures are the point of this exercise, so they are set like figures. */
 .step-tally {
   flex: 0 0 auto;
-  color: var(--graphite);
+  color: var(--faint);
   font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: right;
+  text-transform: uppercase;
 }
 
 .step-tally b {
+  display: block;
+  margin-bottom: -4px;
   color: var(--ink);
-  font-weight: 700;
+  font-size: 34px;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
 }
 
 .stage-body {
   min-width: 0;
   min-height: 0;
-  padding: clamp(16px, 2.2vh, 26px) clamp(20px, 2.8vw, 36px);
+  padding: 0 clamp(22px, 3vw, 40px) clamp(20px, 2.6vh, 30px);
 }
-
-/* 6. Panels ============================================================= */
 
 .prepare-grid,
 .action-grid,
@@ -517,136 +534,142 @@ textarea:focus-visible,
   height: 100%;
   min-height: 0;
   display: grid;
-  gap: clamp(16px, 2.2vw, 28px);
+  gap: clamp(16px, 2vw, 26px);
 }
 
-.prepare-grid { grid-template-columns: minmax(0, 0.85fr) minmax(340px, 1.15fr); }
-.action-grid { grid-template-columns: minmax(250px, 0.72fr) minmax(400px, 1.28fr); }
-.combine-grid { grid-template-columns: minmax(250px, 0.7fr) minmax(400px, 1.3fr); }
-.finish-grid { grid-template-columns: minmax(270px, 0.68fr) minmax(440px, 1.32fr); }
-.attempt-layout { grid-template-columns: minmax(210px, 0.52fr) minmax(400px, 1.48fr); }
+.prepare-grid { grid-template-columns: minmax(0, 0.86fr) minmax(340px, 1.14fr); }
+.action-grid { grid-template-columns: minmax(250px, 0.74fr) minmax(400px, 1.26fr); }
+.combine-grid { grid-template-columns: minmax(250px, 0.72fr) minmax(400px, 1.28fr); }
+.finish-grid { grid-template-columns: minmax(280px, 0.7fr) minmax(440px, 1.3fr); }
+.attempt-layout { grid-template-columns: minmax(210px, 0.5fr) minmax(400px, 1.5fr); }
 
 .panel {
   min-width: 0;
   min-height: 0;
-  padding: clamp(16px, 1.9vw, 24px);
+  padding: clamp(18px, 2vw, 26px);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-unit);
-  background: transparent;
+  border-radius: var(--r-panel);
+  background: var(--surface-2);
 }
 
 .panel-sunk {
-  background: rgb(23 28 26 / 2.5%);
+  background: rgb(14 164 126 / 4%);
 }
 
 .panel-title {
-  margin: 7px 0 0;
-  font-size: clamp(19px, 1.9vw, 25px);
-  line-height: 1.14;
+  margin: 8px 0 0;
+  font-size: clamp(20px, 2vw, 26px);
+  font-weight: 620;
+  letter-spacing: -0.026em;
 }
 
 .panel-lede {
-  margin: 8px 0 0;
-  color: var(--graphite);
-  font-size: 13px;
+  margin: 9px 0 0;
+  color: var(--muted);
+  font-size: 13.5px;
 }
 
-/* Protocol steps: a real ordered sequence, so they are numbered. */
+/* A real ordered sequence, so it is numbered. */
 .protocol {
-  margin: 18px 0 0;
+  margin: 20px 0 0;
   padding: 0;
   display: grid;
-  gap: 0;
+  gap: 12px;
   list-style: none;
   counter-reset: protocol;
 }
 
 .protocol li {
-  padding: 10px 0;
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr);
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: start;
   gap: 12px;
-  border-top: 1px solid var(--rule);
   counter-increment: protocol;
 }
 
-.protocol li:last-child {
-  border-bottom: 1px solid var(--rule);
-}
-
 .protocol li::before {
-  content: counter(protocol);
-  color: var(--bound);
-  font-family: var(--font-mono);
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--jade-deep);
+  background: var(--jade-wash);
   font-size: 12px;
   font-weight: 700;
-  line-height: 1.7;
+  font-variant-numeric: tabular-nums;
+  content: counter(protocol);
 }
 
 .protocol strong {
   display: block;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
 }
 
 .protocol small {
   display: block;
-  margin-top: 1px;
-  color: var(--graphite);
-  font-size: 12px;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12.5px;
 }
 
 .citation {
   margin-top: auto;
-  padding-top: 14px;
-  color: var(--graphite);
-  font-size: 11px;
-  line-height: 1.5;
+  padding-top: 16px;
+  color: var(--faint);
+  font-size: 11.5px;
+  line-height: 1.55;
 }
 
 .citation b {
-  color: var(--ink);
+  color: var(--muted);
   font-weight: 600;
 }
 
 .note {
-  margin-top: 14px;
-  padding: 10px 12px;
-  border-left: 2px solid var(--bound-edge);
-  color: var(--graphite);
-  background: var(--bound-wash);
-  font-size: 12px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: var(--r-control);
+  color: var(--muted);
+  background: var(--surface);
+  font-size: 12.5px;
 }
 
-/* 7. Controls =========================================================== */
+.panel .note {
+  background: var(--surface);
+}
+
+/* 6. Controls =========================================================== */
 
 .button-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
 }
 
 .button {
-  min-height: 40px;
-  padding: 0 15px;
+  min-height: 42px;
+  padding: 0 18px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-unit);
-  font-size: 13px;
+  border: 0;
+  border-radius: var(--r-control);
+  font-size: 13.5px;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
   transition:
-    background var(--tick) var(--ease),
-    border-color var(--tick) var(--ease),
-    color var(--tick) var(--ease);
+    background var(--quick) var(--ease),
+    color var(--quick) var(--ease),
+    box-shadow var(--calm) var(--ease),
+    transform var(--quick) var(--ease),
+    opacity var(--quick) var(--ease);
 }
 
 .button:disabled {
@@ -655,47 +678,51 @@ textarea:focus-visible,
 }
 
 .button-primary {
-  color: var(--leaf);
-  background: var(--bound);
+  color: #fff;
+  background: var(--jade);
+  box-shadow: var(--shadow-jade);
 }
 
 .button-primary:hover:not(:disabled) {
-  background: var(--bound-deep);
+  background: var(--jade-deep);
+  transform: translateY(-1px);
 }
 
 .button-secondary {
-  border-color: var(--rule-firm);
-  background: transparent;
+  color: var(--ink);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
 }
 
 .button-secondary:hover:not(:disabled) {
-  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line-firm);
 }
 
 .button-quiet {
-  padding: 0 8px;
-  color: var(--graphite);
+  padding: 0 12px;
+  color: var(--muted);
   background: transparent;
 }
 
 .button-quiet:hover:not(:disabled) {
-  color: var(--bound);
+  color: var(--jade-deep);
+  background: var(--jade-wash);
 }
 
 .button-compact {
-  min-height: 32px;
-  padding: 0 10px;
-  font-size: 12px;
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 12.5px;
 }
 
 .button.is-copied {
-  color: var(--leaf);
-  background: var(--bound-deep);
+  color: #fff;
+  background: var(--jade-deep);
 }
 
 .field {
   display: grid;
-  gap: 6px;
+  gap: 7px;
 }
 
 .field-fill {
@@ -704,116 +731,136 @@ textarea:focus-visible,
 }
 
 .field label {
-  color: var(--graphite);
-  font-size: 12px;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 550;
 }
 
 .field input,
 .field textarea,
 .score-input {
   width: 100%;
-  border: 1px solid var(--rule-firm);
-  border-radius: var(--radius-unit);
+  border: 0;
+  border-radius: var(--r-control);
   color: var(--ink);
-  background: var(--leaf);
-  transition:
-    border-color var(--tick) var(--ease),
-    box-shadow var(--tick) var(--ease);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition: box-shadow var(--quick) var(--ease);
+}
+
+.panel .field input,
+.panel .field textarea {
+  background: var(--surface);
 }
 
 .field input {
-  height: 42px;
-  padding: 0 12px;
+  height: 46px;
+  padding: 0 15px;
 }
 
 .field textarea {
   min-height: 0;
   height: 100%;
-  padding: 11px 12px;
+  padding: 13px 15px;
   resize: none;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 1.6;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.65;
 }
 
 .field input::placeholder,
 .field textarea::placeholder {
-  color: var(--graphite-light);
+  color: var(--faint);
+}
+
+.field input:hover,
+.field textarea:hover {
+  box-shadow: inset 0 0 0 1px var(--line-firm);
 }
 
 .field input:focus,
 .field textarea:focus,
 .score-input:focus {
-  border-color: var(--bound);
   outline: none;
-  box-shadow: 0 0 0 3px var(--bound-wash);
+  box-shadow:
+    inset 0 0 0 1.5px var(--jade),
+    0 0 0 4px var(--jade-wash);
 }
 
 .check-label {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  font-size: 13px;
+  gap: 11px;
+  font-size: 13.5px;
   cursor: pointer;
 }
 
 .check-label input[type="checkbox"] {
   position: relative;
-  width: 17px;
-  height: 17px;
+  width: 20px;
+  height: 20px;
   margin: 1px 0 0;
   flex: 0 0 auto;
   appearance: none;
-  border: 1px solid var(--rule-firm);
-  border-radius: 2px;
-  background: var(--leaf);
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1.5px var(--line-firm);
   cursor: pointer;
   transition:
-    background var(--tick) var(--ease),
-    border-color var(--tick) var(--ease);
+    background var(--quick) var(--ease),
+    box-shadow var(--quick) var(--ease);
 }
 
 .check-label input[type="checkbox"]::after {
   position: absolute;
-  top: 1px;
-  left: 5px;
-  width: 4px;
-  height: 9px;
-  border: solid var(--leaf);
+  top: 3px;
+  left: 7px;
+  width: 5px;
+  height: 10px;
+  border: solid #fff;
   border-width: 0 2px 2px 0;
   opacity: 0;
-  transform: rotate(45deg);
+  transform: rotate(45deg) scale(0.7);
+  transition:
+    opacity 120ms linear,
+    transform 220ms var(--ease);
   content: "";
 }
 
+.check-label input[type="checkbox"]:hover {
+  box-shadow: inset 0 0 0 1.5px var(--jade-edge);
+}
+
 .check-label input[type="checkbox"]:checked {
-  border-color: var(--bound);
-  background: var(--bound);
+  background: var(--jade);
+  box-shadow: inset 0 0 0 1.5px var(--jade);
 }
 
 .check-label input[type="checkbox"]:checked::after {
   opacity: 1;
+  transform: rotate(45deg) scale(1);
 }
 
 .completion-check {
   margin-top: auto;
-  padding-top: 16px;
+  padding-top: 18px;
 }
 
 .tag {
-  padding: 4px 8px;
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-unit);
-  color: var(--graphite);
-  font-family: var(--font-mono);
-  font-size: 11px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-size: 11.5px;
+  font-weight: 550;
   white-space: nowrap;
 }
 
 .tag-on {
-  border-color: var(--bound-edge);
-  color: var(--bound);
-  background: var(--bound-wash);
+  color: var(--jade-deep);
+  background: var(--jade-wash);
+  box-shadow: none;
 }
 
 .stage-footer {
@@ -821,29 +868,29 @@ textarea:focus-visible,
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 16px;
+  gap: 18px;
 }
 
 .footer-hint {
   margin: 0;
   overflow: hidden;
-  color: var(--graphite);
-  font-size: 12px;
+  color: var(--muted);
+  font-size: 12.5px;
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* 8. Assay grid — the signature ========================================= */
+/* 7. Assay plate — the signature ======================================== */
 
-/* The answer appears twice: redacted in step 1, so the reader knows the
-   shape of what they are producing, and resolved in step 3. */
+/* Before the reveal this is a plate of wells: you can see the shape of the
+   answer, 42 of them, without seeing it. Revealing develops the plate
+   column by column. */
 .assay {
   min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 .assay-frame {
@@ -851,113 +898,130 @@ textarea:focus-visible,
   min-height: 0;
   flex: 1 1 auto;
   overflow: auto;
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-unit);
-  background: transparent;
+  border-radius: var(--r-panel);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
 }
 
 .assay-table {
   width: 100%;
   height: 100%;
-  min-width: 620px;
-  border-collapse: collapse;
-  font-size: 12px;
+  min-width: 600px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12.5px;
 }
 
 .assay-head {
-  padding: 9px 10px;
   position: sticky;
   top: 0;
   z-index: 1;
-  border-bottom: 1px solid var(--rule-firm);
-  color: var(--graphite);
-  background: var(--leaf-sunk);
-  font-size: 11px;
-  font-weight: 600;
+  padding: 12px 14px;
+  color: var(--muted);
+  background: var(--surface-2);
+  font-size: 11.5px;
+  font-weight: 650;
   text-align: left;
   white-space: nowrap;
 }
+
+.assay-head:first-child { border-top-left-radius: var(--r-panel); }
+.assay-head:last-child { border-top-right-radius: var(--r-panel); }
 
 .assay-cell {
   position: relative;
-  padding: 9px 10px;
-  border-bottom: 1px solid var(--rule);
+  padding: 11px 14px;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
   text-align: left;
   white-space: nowrap;
 }
 
-.assay-table tbody tr:last-child .assay-cell {
-  border-bottom: 0;
+.assay-table tbody tr + tr .assay-cell {
+  border-top: 1px solid var(--line);
 }
 
 .assay-cell sup {
-  font-size: 0.75em;
-  vertical-align: super;
+  font-size: 0.74em;
   line-height: 0;
+  vertical-align: super;
 }
 
-/* Redaction bar. Wipes left-to-right, column by column, on reveal. */
+/* The well itself. */
 .assay-cell::after {
   position: absolute;
-  inset: 4px 6px;
-  border-radius: 1px;
-  background: var(--bound-wash);
-  box-shadow: inset 0 0 0 1px var(--bound-edge);
-  transform-origin: left center;
-  transition: transform 300ms var(--ease);
-  transition-delay: calc(var(--col, 0) * 65ms);
+  inset: 5px 8px;
+  border-radius: var(--r-well);
+  background: var(--pending);
+  box-shadow: inset 0 0 0 1px var(--pending-edge);
+  transition:
+    opacity var(--calm) var(--ease),
+    transform var(--calm) var(--ease);
+  transition-delay: calc(var(--col, 0) * 62ms);
   content: "";
 }
 
 .assay-cell > span {
+  position: relative;
+  display: inline-block;
   opacity: 0;
-  transition: opacity 160ms linear;
-  transition-delay: calc(var(--col, 0) * 65ms + 110ms);
+  transform: translateY(3px);
+  transition:
+    opacity 240ms var(--ease),
+    transform 240ms var(--ease);
+  transition-delay: calc(var(--col, 0) * 62ms + 90ms);
 }
 
 .assay.is-revealed .assay-cell::after {
-  transform: scaleX(0);
+  opacity: 0;
+  transform: scale(0.94);
 }
 
 .assay.is-revealed .assay-cell > span {
   opacity: 1;
+  transform: translateY(0);
 }
 
 .assay-compact .assay-head,
 .assay-compact .assay-cell {
-  padding: 5px 8px;
+  padding: 6px 10px;
   font-size: 11px;
+}
+
+.assay-compact .assay-cell::after {
+  inset: 3px 6px;
 }
 
 .assay-caption {
-  padding: 9px 2px 0;
+  padding: 11px 4px 0;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 12px;
-  color: var(--graphite);
-  font-size: 11px;
+  gap: 14px;
+  color: var(--faint);
+  font-size: 11.5px;
 }
 
 .assay-caption b {
-  color: var(--ink);
-  font-family: var(--font-mono);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
   font-weight: 700;
 }
 
 .reveal-bar {
-  padding: 12px 0 0;
+  padding: 0 0 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 20px;
 }
 
 .reveal-bar p {
   margin: 0;
-  max-width: 46ch;
-  color: var(--graphite);
-  font-size: 12px;
+  max-width: 48ch;
+  color: var(--muted);
+  font-size: 12.5px;
 }
 
 .assay.is-revealed .reveal-bar {
@@ -965,82 +1029,35 @@ textarea:focus-visible,
 }
 
 .handoff {
-  margin-top: 12px;
-  padding: 11px 13px;
+  margin-top: 14px;
+  padding: 14px 16px;
   display: none;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  border: 1px solid var(--bound-edge);
-  border-radius: var(--radius-unit);
-  background: var(--bound-wash);
+  gap: 16px;
+  border-radius: var(--r-panel);
+  background: var(--jade-wash);
 }
 
 .assay.is-revealed .handoff {
   display: flex;
+  animation: card-in var(--calm) var(--ease) both;
 }
 
 .handoff strong {
   display: block;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 13.5px;
+  font-weight: 620;
 }
 
 .handoff small {
   display: block;
-  margin-top: 1px;
-  color: var(--graphite);
-  font-size: 12px;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12.5px;
 }
 
-/* 9. Reference table, scores, attempts ================================== */
-
-.score-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-}
-
-.score-input {
-  width: 62px;
-  height: 38px;
-  padding: 0 8px;
-  text-align: center;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.score-suffix {
-  color: var(--graphite);
-  font-size: 12px;
-}
-
-.score-card {
-  padding: 12px 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-  border-top: 1px solid var(--rule);
-}
-
-.score-card:last-of-type {
-  border-bottom: 1px solid var(--rule);
-}
-
-.score-card strong {
-  display: block;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.score-card small {
-  display: block;
-  margin-top: 1px;
-  color: var(--graphite);
-  font-size: 11px;
-}
+/* 8. Lab 2 ============================================================== */
 
 .attempt-sidebar {
   min-height: 0;
@@ -1049,59 +1066,63 @@ textarea:focus-visible,
 }
 
 .attempt-tabs {
-  margin-top: 16px;
+  margin-top: 18px;
   display: grid;
-  gap: 6px;
+  gap: 8px;
 }
 
 .attempt-tab {
   width: 100%;
   min-width: 0;
-  padding: 10px 12px;
+  padding: 13px 15px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-unit);
-  background: var(--leaf);
+  border: 0;
+  border-radius: var(--r-control);
+  background: var(--surface-2);
   cursor: pointer;
   text-align: left;
   transition:
-    border-color var(--tick) var(--ease),
-    background var(--tick) var(--ease);
+    background var(--quick) var(--ease),
+    box-shadow var(--quick) var(--ease);
 }
 
 .attempt-tab:hover {
-  border-color: var(--rule-firm);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
 }
 
 .attempt-tab strong {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
 }
 
 .attempt-tab span {
-  color: var(--graphite);
-  font-family: var(--font-mono);
-  font-size: 11px;
+  color: var(--faint);
+  font-size: 11.5px;
+  font-weight: 600;
 }
 
 .attempt-tab.is-current {
-  border-color: var(--bound);
-  background: var(--bound-wash);
+  background: var(--surface);
+  box-shadow:
+    inset 0 0 0 1.5px var(--jade),
+    var(--shadow-soft);
 }
 
 .attempt-tab.is-saved span {
-  color: var(--bound);
+  color: var(--jade);
 }
 
 .attempt-progress {
   margin-top: auto;
-  padding-top: 14px;
-  color: var(--graphite);
-  font-family: var(--font-mono);
-  font-size: 11px;
+  padding-top: 16px;
+  color: var(--faint);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .attempt-editor,
@@ -1110,112 +1131,182 @@ textarea:focus-visible,
   min-height: 0;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
-  gap: 12px;
+  gap: 14px;
 }
 
 .attempt-editor-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 14px;
+  gap: 16px;
 }
 
 .attempt-editor-header p {
-  margin: 4px 0 0;
+  margin: 6px 0 0;
   max-width: 62ch;
-  color: var(--graphite);
-  font-size: 12px;
+  color: var(--muted);
+  font-size: 12.5px;
 }
 
 .combine-status {
-  margin: 16px 0 0;
+  margin: 18px 0 0;
   padding: 0;
   display: grid;
-  gap: 0;
+  gap: 8px;
   list-style: none;
 }
 
 .combine-status li {
-  padding: 9px 0;
+  padding: 11px 14px;
   display: flex;
   align-items: center;
-  gap: 9px;
-  border-top: 1px solid var(--rule);
-  font-size: 12px;
-}
-
-.combine-status li:last-child {
-  border-bottom: 1px solid var(--rule);
+  gap: 10px;
+  border-radius: var(--r-control);
+  background: var(--jade-wash);
+  color: var(--jade-deep);
+  font-size: 12.5px;
+  font-weight: 600;
 }
 
 .combine-status i {
   width: 7px;
   height: 7px;
+  flex: 0 0 7px;
   border-radius: 50%;
-  background: var(--bound);
+  background: var(--jade);
 }
 
 .combine-actions {
-  margin-top: 16px;
+  margin-top: 18px;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 9px;
 }
 
 .prompt-panel {
   min-width: 0;
   min-height: 0;
-  padding: clamp(18px, 2.2vw, 30px);
+  padding: clamp(22px, 2.6vw, 36px);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
-  border: 1px solid var(--rule);
-  border-radius: var(--radius-unit);
-  background: rgb(23 28 26 / 2.5%);
+  border-radius: var(--r-panel);
+  background: var(--surface-2);
 }
 
 .prompt-sigil {
-  padding-bottom: 14px;
-  color: var(--bound);
-  font-size: 12px;
-  letter-spacing: 0.12em;
+  margin-bottom: 16px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  color: var(--jade-deep);
+  background: var(--jade-wash);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
 }
 
 .prompt-panel .panel-title {
   margin: 0;
+  font-size: clamp(23px, 2.3vw, 31px);
 }
 
 .prompt-panel .panel-lede {
-  max-width: 54ch;
-  margin-bottom: 20px;
+  max-width: 52ch;
+  margin-bottom: 22px;
 }
 
 .prompt-meta {
-  margin-top: 16px;
+  margin-top: 18px;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 7px;
+}
+
+/* 9. Scores ============================================================= */
+
+.score-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  white-space: nowrap;
+}
+
+.score-input {
+  width: 66px;
+  height: 42px;
+  padding: 0 8px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.score-suffix {
+  color: var(--faint);
+  font-size: 12.5px;
+  font-weight: 550;
+}
+
+.score-card {
+  padding: 15px 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  border-radius: var(--r-control);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.score-card + .score-card {
+  margin-top: 9px;
+}
+
+.score-card strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.score-card small {
+  display: block;
+  margin-top: 1px;
+  color: var(--faint);
+  font-size: 11.5px;
 }
 
 /* 10. Dialog + toast ==================================================== */
 
 .preview-dialog {
-  width: min(980px, calc(100vw - 32px));
-  height: min(84dvh, 820px);
+  width: min(1000px, calc(100vw - 32px));
+  height: min(84dvh, 840px);
   max-width: none;
   max-height: none;
   padding: 0;
   overflow: hidden;
-  border: 1px solid var(--rule-firm);
-  border-radius: var(--radius-card);
+  border: 0;
+  border-radius: var(--r-card);
   color: var(--ink);
-  background: var(--leaf);
+  background: var(--surface);
   box-shadow: var(--shadow-modal);
 }
 
+.preview-dialog[open] {
+  animation: dialog-in var(--calm) var(--ease);
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+}
+
 .preview-dialog::backdrop {
-  background: rgb(20 24 22 / 52%);
+  background: rgb(9 20 18 / 46%);
+  backdrop-filter: blur(3px);
 }
 
 .dialog-shell {
@@ -1227,63 +1318,63 @@ textarea:focus-visible,
 
 .dialog-header,
 .dialog-actions {
-  padding: 14px 18px;
+  padding: 16px 22px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-}
-
-.dialog-header {
-  border-bottom: 1px solid var(--rule);
+  gap: 18px;
 }
 
 .dialog-header h2 {
-  margin: 4px 0 0;
-  font-family: var(--font-mono);
-  font-size: 19px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  margin: 5px 0 0;
+  font-size: 21px;
+  font-weight: 620;
 }
 
 .dialog-actions {
-  border-bottom: 1px solid var(--rule);
-  background: var(--leaf-sunk);
+  padding-top: 12px;
+  padding-bottom: 12px;
+  background: var(--surface-2);
 }
 
 .dialog-actions p {
   margin: 0;
-  color: var(--graphite);
-  font-size: 12px;
+  color: var(--muted);
+  font-size: 12.5px;
 }
 
 .icon-button {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--rule-firm);
-  border-radius: var(--radius-unit);
-  background: transparent;
-  font-size: 18px;
+  border: 0;
+  border-radius: 50%;
+  color: var(--muted);
+  background: var(--surface-2);
+  font-size: 19px;
   line-height: 1;
   cursor: pointer;
-  transition: border-color var(--tick) var(--ease);
+  transition:
+    color var(--quick) var(--ease),
+    background var(--quick) var(--ease);
 }
 
 .icon-button:hover {
-  border-color: var(--ink);
+  color: var(--ink);
+  background: var(--line);
 }
 
 .preview-dialog pre {
   min-height: 0;
   margin: 0;
-  padding: 18px;
+  padding: 22px;
   overflow: auto;
-  background: var(--leaf);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 1.65;
+  color: var(--ink);
+  background: var(--surface);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.7;
   white-space: pre-wrap;
 }
 
@@ -1291,19 +1382,21 @@ textarea:focus-visible,
   position: fixed;
   z-index: 20;
   left: 50%;
-  bottom: 22px;
+  bottom: 26px;
   max-width: calc(100vw - 28px);
-  padding: 9px 14px;
-  border-radius: var(--radius-unit);
-  color: var(--bench);
+  padding: 11px 18px;
+  border-radius: 999px;
+  color: var(--field);
   background: var(--ink);
-  font-size: 12px;
+  box-shadow: var(--shadow-lift);
+  font-size: 12.5px;
+  font-weight: 600;
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, 6px);
+  transform: translate(-50%, 8px);
   transition:
-    opacity var(--tick) var(--ease),
-    transform var(--tick) var(--ease);
+    opacity var(--calm) var(--ease),
+    transform var(--calm) var(--ease);
 }
 
 .toast.is-visible {
@@ -1314,17 +1407,18 @@ textarea:focus-visible,
 .noscript {
   position: fixed;
   z-index: 30;
-  inset: 16px;
-  padding: 22px;
-  border: 1px solid var(--rule);
-  background: var(--leaf);
+  inset: 18px;
+  padding: 26px;
+  border-radius: var(--r-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
 }
 
 /* 11. Responsive ======================================================== */
 
 @media (max-width: 900px) {
   .app-shell {
-    grid-template-rows: 58px 64px minmax(0, 1fr) 64px;
+    grid-template-rows: 60px 68px minmax(0, 1fr) 68px;
     padding: 0 14px;
   }
 
@@ -1343,15 +1437,11 @@ textarea:focus-visible,
   }
 
   .stage-heading {
-    padding: 13px 16px 11px;
+    padding: 15px 18px 14px;
   }
 
   .stage-body {
-    padding: 14px 16px;
-  }
-
-  .protocol li {
-    padding: 7px 0;
+    padding: 0 18px 16px;
   }
 
   .protocol small,
@@ -1360,11 +1450,7 @@ textarea:focus-visible,
   }
 
   .assay-table {
-    min-width: 540px;
-  }
-
-  .attempt-layout {
-    grid-template-rows: auto minmax(0, 1fr);
+    min-width: 520px;
   }
 
   .attempt-sidebar {
@@ -1386,28 +1472,37 @@ textarea:focus-visible,
   .attempt-tab span {
     display: none;
   }
+
+  /* Keep the reference table on screen on the last step rather than letting
+     the score panel push it out of the viewport. */
+  .finish-grid {
+    grid-template-rows: minmax(0, auto) minmax(150px, 1fr);
+  }
+
+  .finish-grid > .panel {
+    overflow: auto;
+  }
 }
 
 @media (max-width: 620px) {
   .brand small,
   .text-link,
-  .step-tally,
   .footer-hint,
   .prompt-meta {
     display: none;
   }
 
+  .step-tally b {
+    font-size: 26px;
+  }
+
   .stage-body {
-    padding: 12px;
+    padding: 0 12px 12px;
   }
 
   .panel,
   .prompt-panel {
-    padding: 14px;
-  }
-
-  .protocol {
-    margin-top: 12px;
+    padding: 16px;
   }
 
   .stage-footer {
@@ -1418,36 +1513,35 @@ textarea:focus-visible,
     width: 100%;
   }
 
-  .reveal-bar {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
+  .reveal-bar,
   .handoff {
     flex-direction: column;
     align-items: flex-start;
-    gap: 6px;
+    gap: 12px;
   }
 }
 
 @media (max-height: 680px) {
   .app-shell {
-    grid-template-rows: 54px 62px minmax(0, 1fr) 60px;
+    grid-template-rows: 56px 64px minmax(0, 1fr) 62px;
   }
 
   .stage-heading {
-    padding-top: 11px;
-    padding-bottom: 10px;
-  }
-
-  .stage-body {
-    padding-top: 12px;
+    padding-top: 13px;
     padding-bottom: 12px;
   }
 
-  .protocol li {
-    padding: 7px 0;
+  .stage-heading h1 {
+    margin-top: 5px;
+  }
+
+  .step-tally b {
+    font-size: 26px;
+  }
+
+  .protocol {
+    margin-top: 12px;
+    gap: 9px;
   }
 }
 
@@ -1461,5 +1555,9 @@ textarea:focus-visible,
     animation-delay: 0ms !important;
     transition-duration: 0.01ms !important;
     transition-delay: 0ms !important;
+  }
+
+  .button-primary:hover:not(:disabled) {
+    transform: none;
   }
 }
