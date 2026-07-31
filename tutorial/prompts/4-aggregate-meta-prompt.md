@@ -3,13 +3,6 @@ The final prompt should be rich and full of information, combining the best of a
 Start with attempt 1, and add components from attempt 2 and attempt 3. The final prompt will be larger than any one attempt, will have broader coverage, will maintain the necessary nuance to carry out the task.
 I will provide you with the initial prompt used to generate the 3 prompts provided here.
 
-The initial prompt that produced the three attempts was:
-
-> Extract Species, Temp, Troponin Complex, Bound Ca2+ Measure, Mg, Kd (M^-1),
-> K (μM), Ref., and Nuance from a PDF, into one Markdown table, with a quote
-> column next to each field so every value is verifiable. Do not assume or imply.
-> Flag any calculated values.
-
 Here are the three attempts to merge:
 
 --- ATTEMPT 1 ---
